@@ -539,6 +539,7 @@
             window.fpEntry = flatpickr("#entry-date", {
                 dateFormat: "d/m/y",
                 defaultDate: "today",
+                disableMobile: true, // FIX: Forces desktop-style UI on mobile, preventing native formatting hi-jacks
                 onChange: saveDraft
             });
 
