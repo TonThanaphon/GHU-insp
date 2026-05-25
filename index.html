@@ -41,7 +41,7 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        /* FIX: Image Map Container now strictly wraps the image to prevent landscape shift */
+        /* Image Map Container */
         .img-map-container { position: relative; display: inline-block; max-width: 100%; }
         .img-map-container img { display: block; max-width: 100%; max-height: 70vh; width: auto; height: auto; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         
@@ -49,12 +49,12 @@
         .dot { position: absolute; width: 34px; height: 34px; border-radius: 50%; transform: translate(-50%, -50%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 9px; line-height: 1.2; font-weight: bold; color: white; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4); transition: transform 0.1s; }
         .dot span.val { font-size: 11px; }
         
-        /* FIX: Only apply hover effects on devices that support hover (fixes mobile sticky hover) */
+        /* Only apply hover effects on devices that support hover */
         @media (hover: hover) {
             .dot:hover { transform: translate(-50%, -50%) scale(1.15); z-index: 10; }
         }
         
-        /* FIX: explicitly scale down dots on small mobile screens */
+        /* explicitly scale down dots on small mobile screens */
         @media (max-width: 768px) {
             .dot { width: 24px; height: 24px; font-size: 7px; border-width: 1.5px; }
             .dot span.val { font-size: 9px; }
@@ -64,7 +64,7 @@
         .dot-filled { background-color: #22c55e; } /* Green */
         .dot-admin { background-color: #3b82f6; } /* Blue */
         
-        /* FIX: Neutralizes mobile tap highlights for Pure JS State toggling */
+        /* Neutralizes mobile tap highlights for Pure JS State toggling */
         .no-tap-highlight { 
             -webkit-tap-highlight-color: transparent; 
             outline: none; 
@@ -119,7 +119,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
                         <div class="relative">
-                            <input type="text" id="entry-date" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-white cursor-pointer" placeholder="DD/MM/YY" onchange="saveDraft()">
+                            <input type="text" id="entry-date" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-white cursor-pointer pr-10" placeholder="DD/MM/YY" onchange="saveDraft()">
                             <i class="fa-solid fa-calendar absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
                         </div>
                     </div>
@@ -150,7 +150,6 @@
                 <div id="entry-map-area" class="hidden flex flex-col items-center border-t pt-6">
                     <p class="text-sm text-gray-500 mb-3"><i class="fa-solid fa-info-circle mr-1"></i>Click on the red dots to input GU values.</p>
                     
-                    <!-- FIX: Removed generic w-full class from img to let container properly bound it -->
                     <div class="img-map-container" id="entry-img-container">
                         <img id="entry-img" src="" alt="Part Image">
                         <div id="entry-dots-layer"></div>
@@ -205,43 +204,123 @@
 
         <!-- 2. DASHBOARD SECTION -->
         <section id="sec-dashboard" class="max-w-7xl mx-auto hidden">
-            <h2 class="text-2xl font-bold mb-6 text-gray-800"><i class="fa-solid fa-chart-line text-blue-500 mr-2"></i>Performance Dashboard</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <!-- Summary Cards -->
-                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500">
-                    <h3 class="text-gray-500 text-sm font-medium">Total Inspections</h3>
-                    <p class="text-3xl font-bold text-gray-800 mt-1" id="dash-total">0</p>
+            <div class="flex flex-col space-y-6">
+                
+                <!-- GLOBAL FILTERS (Expanded) -->
+                <div class="bg-white rounded-xl shadow-sm p-5 grid grid-cols-1 md:grid-cols-5 gap-4 border-l-4 border-blue-600 items-end">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Date Range</label>
+                        <div class="relative">
+                            <input type="text" id="dash-filter-date" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 border p-2 text-sm bg-white cursor-pointer pr-8" placeholder="Select dates...">
+                            <i class="fa-solid fa-calendar absolute right-3 top-2.5 text-gray-400 pointer-events-none"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Part Name</label>
+                        <select id="dash-filter-part" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 border p-2 text-sm bg-white">
+                            <option value="ALL">All Parts</option>
+                            <!-- Dynamically populated -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Color</label>
+                        <select id="dash-filter-color" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 border p-2 text-sm bg-white">
+                            <option value="ALL">All Colors</option>
+                            <!-- Dynamically populated -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Sprayer</label>
+                        <select id="dash-filter-sprayer" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 border p-2 text-sm bg-white">
+                            <option value="ALL">All Sprayers</option>
+                            <!-- Dynamically populated -->
+                        </select>
+                    </div>
+                    <div>
+                        <button onclick="applyDashboardFilters()" class="w-full bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition font-semibold shadow-sm flex items-center justify-center h-[38px]">
+                            <i class="fa-solid fa-filter mr-2"></i> Apply Filters
+                        </button>
+                    </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500">
-                    <h3 class="text-gray-500 text-sm font-medium">Overall OK Rate</h3>
-                    <p class="text-3xl font-bold text-gray-800 mt-1" id="dash-ok-rate">0%</p>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-red-500">
-                    <h3 class="text-gray-500 text-sm font-medium">Total NG</h3>
-                    <p class="text-3xl font-bold text-gray-800 mt-1" id="dash-total-ng">0</p>
-                </div>
-            </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white rounded-xl shadow-sm p-5">
-                    <h3 class="text-lg font-semibold mb-4 text-center">Judgement Breakdown</h3>
-                    <div class="relative h-64 w-full flex justify-center">
-                        <canvas id="chartPie"></canvas>
+                <!-- SUB-TAB NAVIGATION -->
+                <div class="bg-white rounded-xl shadow-sm px-5 pt-5 border-b border-gray-200">
+                    <div class="flex space-x-6 overflow-x-auto">
+                        <button onclick="switchDashTab('overview')" id="tab-dash-overview" class="pb-3 border-b-2 font-semibold text-sm transition-colors border-blue-600 text-blue-600 whitespace-nowrap"><i class="fa-solid fa-chart-pie mr-1"></i> Overview</button>
+                        <button onclick="switchDashTab('performance')" id="tab-dash-performance" class="pb-3 border-b-2 border-transparent font-semibold text-sm text-gray-500 hover:text-gray-700 transition-colors whitespace-nowrap"><i class="fa-solid fa-chart-simple mr-1"></i> Performance</button>
+                        <button onclick="switchDashTab('engineering')" id="tab-dash-engineering" class="pb-3 border-b-2 border-transparent font-semibold text-sm text-gray-500 hover:text-gray-700 transition-colors whitespace-nowrap"><i class="fa-solid fa-microscope mr-1"></i> Engineering Deep Dive</button>
                     </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm p-5">
-                    <h3 class="text-lg font-semibold mb-4 text-center">Defect Reasons (Remarks)</h3>
-                    <div class="relative h-64 w-full">
-                        <canvas id="chartBar"></canvas>
+
+                <!-- TAB 1: OVERVIEW -->
+                <div id="dash-content-overview" class="block space-y-6">
+                    <!-- KPI Cards -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-3 opacity-10"><i class="fa-solid fa-clipboard-list text-4xl text-blue-600"></i></div>
+                            <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Inspections</h3>
+                            <p class="text-3xl font-bold text-gray-800 mt-1" id="kpi-total">0</p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-3 opacity-10"><i class="fa-solid fa-check-double text-4xl text-green-600"></i></div>
+                            <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">Overall Yield (OK)</h3>
+                            <p class="text-3xl font-bold text-green-600 mt-1" id="kpi-yield">0%</p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-3 opacity-10"><i class="fa-solid fa-triangle-exclamation text-4xl text-red-600"></i></div>
+                            <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">Total NG</h3>
+                            <p class="text-3xl font-bold text-red-600 mt-1" id="kpi-ng">0</p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-3 opacity-10"><i class="fa-solid fa-magnifying-glass-chart text-4xl text-purple-600"></i></div>
+                            <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">Top Defect</h3>
+                            <p class="text-xl font-bold text-purple-600 mt-2 truncate" id="kpi-defect">-</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+                        <h3 class="text-md font-semibold text-gray-700 mb-4 border-b pb-2">Judgement Breakdown</h3>
+                        <div class="relative h-72 w-full flex justify-center items-center">
+                            <canvas id="chart-pie-judgement"></canvas>
+                        </div>
                     </div>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm p-5 lg:col-span-2">
-                    <h3 class="text-lg font-semibold mb-4 text-center">Average GU Trend Over Time</h3>
-                    <div class="relative h-72 w-full">
-                        <canvas id="chartLine"></canvas>
+
+                <!-- TAB 2: PERFORMANCE -->
+                <div id="dash-content-performance" class="hidden space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+                            <h3 class="text-md font-semibold text-gray-700 mb-4 border-b pb-2">Defect Pareto (Remarks)</h3>
+                            <div class="relative h-72 w-full flex justify-center items-center">
+                                <canvas id="chart-bar-pareto"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+                            <h3 class="text-md font-semibold text-gray-700 mb-4 border-b pb-2">Yield by Sprayer</h3>
+                            <div class="relative h-72 w-full flex justify-center items-center">
+                                <canvas id="chart-bar-sprayer"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- TAB 3: ENGINEERING -->
+                <div id="dash-content-engineering" class="hidden space-y-6">
+                    <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+                        <h3 class="text-md font-semibold text-gray-700 mb-4 border-b pb-2">Average GU Trend Over Time</h3>
+                        <div class="relative h-72 w-full flex justify-center items-center">
+                            <canvas id="chart-line-trend"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+                        <h3 class="text-md font-semibold text-gray-700 mb-4 border-b pb-2">Key Point Variance (Avg GU per Point)</h3>
+                        <p class="text-xs text-gray-400 mb-2 italic">Select a specific part in the Global Filters above for targeted point analysis.</p>
+                        <div class="relative h-72 w-full flex justify-center items-center">
+                            <canvas id="chart-bar-variance"></canvas>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </section>
 
@@ -330,7 +409,6 @@
                     
                     <div id="admin-map-area" class="hidden">
                         <p class="text-sm text-gray-500 mb-2"><i class="fa-solid fa-mouse-pointer mr-1"></i> Click anywhere on the image to add a measurement point.</p>
-                        <!-- FIX: Removed w-full -->
                         <div class="img-map-container" id="admin-img-container" onclick="handleMapClick(event)">
                             <img id="admin-img" src="" alt="Part Image">
                             <div id="admin-dots-layer"></div>
@@ -338,7 +416,7 @@
                     </div>
                 </div>
 
-                <!-- NEW: Setting GU STD Tab -->
+                <!-- Setting GU STD Tab -->
                 <div id="admin-tab-gu" class="hidden">
                     <div class="bg-gray-50 border rounded-lg p-5 mb-8">
                         <h3 class="text-md font-semibold text-gray-700 mb-4"><i class="fa-solid fa-sliders text-purple-500 mr-2"></i>GU Standards & Tolerances</h3>
@@ -389,7 +467,6 @@
                 <button onclick="$('#viewMapModal').addClass('hidden')" class="text-gray-500 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <div class="p-4 overflow-y-auto flex-1 flex justify-center bg-gray-100 relative">
-                <!-- FIX: Removed w-full -->
                 <div class="img-map-container shadow-md">
                     <img id="view-img" src="" alt="Part">
                     <div id="view-dots-layer"></div>
@@ -503,8 +580,9 @@
             entryForm: { part: '', judgement: '', guValues: {} },
             adminPoints: [],
             adminGuRules: [],
-            currentReports: [], 
-            charts: {}
+            currentReports: [],
+            dashData: [], // All raw report data for dashboard
+            charts: {} // Tracks Chart.js instances
         };
 
         const FALLBACK_IMAGE_URLS = {
@@ -545,7 +623,15 @@
             window.fpEntry = flatpickr("#entry-date", {
                 dateFormat: "d/m/y",
                 defaultDate: "today",
+                disableMobile: true,
                 onChange: saveDraft
+            });
+            
+            // Initialize Flatpickr for Dashboard Filters
+            window.fpDash = flatpickr("#dash-filter-date", {
+                mode: "range",
+                dateFormat: "d/m/y",
+                disableMobile: true
             });
 
             try {
@@ -570,6 +656,21 @@
             populate('entry-sprayer', appState.masterData.sprayers);
             populate('entry-color', appState.masterData.colors);
             populate('entry-location', appState.masterData.locations);
+            
+            // Populate Dashboard Filters
+            const dashPartSel = document.getElementById('dash-filter-part');
+            dashPartSel.innerHTML = '<option value="ALL">All Parts</option>';
+            Object.keys(appState.masterData.coordinates).forEach(part => {
+                dashPartSel.add(new Option(part, part));
+            });
+
+            const dashColorSel = document.getElementById('dash-filter-color');
+            dashColorSel.innerHTML = '<option value="ALL">All Colors</option>';
+            appState.masterData.colors.forEach(color => dashColorSel.add(new Option(color, color)));
+
+            const dashSprayerSel = document.getElementById('dash-filter-sprayer');
+            dashSprayerSel.innerHTML = '<option value="ALL">All Sprayers</option>';
+            appState.masterData.sprayers.forEach(sprayer => dashSprayerSel.add(new Option(sprayer, sprayer)));
         }
 
         function navigate(view) {
@@ -616,12 +717,10 @@
         function setJudgement(val) {
             appState.entryForm.judgement = val;
             
-            // FIX: Remove focus to prevent any native sticky states from persisting
             if (document.activeElement) {
                 document.activeElement.blur();
             }
             
-            // 1. Explicitly RESET all buttons to default Pure State gray
             ['ok','ng','tok'].forEach(btn => {
                 const el = document.getElementById(`btn-${btn}`);
                 if(el) {
@@ -630,7 +729,6 @@
                 }
             });
             
-            // 2. Explicitly SET the newly active button colors
             if (val) {
                 const activeEl = document.getElementById(`btn-${val.toLowerCase()}`);
                 if (activeEl) {
@@ -687,7 +785,6 @@
                 dot.style.left = `${pt.x * 100}%`;
                 dot.style.top = `${pt.y * 100}%`;
                 
-                // Show ID and Numerical Value cleanly
                 dot.innerHTML = `<span>${pt.id.replace(/^[A-Z]+/, '')}</span>` + (hasVal ? `<span class="val">${val}</span>` : ``);
                 dot.title = `${pt.id}${hasVal ? ': ' + val : ''}`;
                 
@@ -915,92 +1012,286 @@
         // ==========================================
         // 6. DASHBOARD MODULE
         // ==========================================
+        
+        // Helper to parse dates uniformly
+        function parseDateStandard(dateStr) {
+            if(!dateStr) return new Date(0);
+            if(dateStr.includes('/')) {
+                let parts = dateStr.split('/');
+                return new Date(2000 + parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+            }
+            return new Date(dateStr);
+        }
+
+        function switchDashTab(tab) {
+            ['overview', 'performance', 'engineering'].forEach(v => {
+                document.getElementById(`dash-content-${v}`).classList.add('hidden');
+                document.getElementById(`dash-content-${v}`).classList.remove('block');
+                
+                const btn = document.getElementById(`tab-dash-${v}`);
+                btn.classList.remove('border-blue-600', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            document.getElementById(`dash-content-${tab}`).classList.remove('hidden');
+            document.getElementById(`dash-content-${tab}`).classList.add('block');
+            
+            const activeBtn = document.getElementById(`tab-dash-${tab}`);
+            activeBtn.classList.add('border-blue-600', 'text-blue-600');
+            activeBtn.classList.remove('border-transparent', 'text-gray-500');
+        }
+
         async function loadDashboard() {
             Swal.fire({ title: 'Loading Data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
-                const rawData = await API.run('getReportData');
-                processDashboardData(rawData);
+                appState.dashData = await API.run('getReportData');
+                applyDashboardFilters(); // Process & Render
                 Swal.close();
             } catch(e) {
                 Swal.fire('Error', 'Failed to load dashboard data.', 'error');
             }
         }
 
+        function applyDashboardFilters() {
+            const selectedPart = document.getElementById('dash-filter-part').value;
+            const selectedColor = document.getElementById('dash-filter-color').value;
+            const selectedSprayer = document.getElementById('dash-filter-sprayer').value;
+            const selectedDates = window.fpDash.selectedDates;
+            
+            let filteredData = appState.dashData.filter(row => {
+                // Feature 1: Global Filters for Part, Color, Sprayer
+                if (selectedPart !== 'ALL' && row.part !== selectedPart) return false;
+                if (selectedColor !== 'ALL' && row.color !== selectedColor) return false;
+                if (selectedSprayer !== 'ALL' && row.sprayer !== selectedSprayer) return false;
+                
+                // Date Filter
+                if (selectedDates && selectedDates.length > 0) {
+                    let rowDate = parseDateStandard(row.date);
+                    let start = selectedDates[0];
+                    let end = selectedDates.length > 1 ? selectedDates[1] : start;
+                    rowDate.setHours(0,0,0,0);
+                    start.setHours(0,0,0,0);
+                    end.setHours(0,0,0,0);
+                    if (rowDate < start || rowDate > end) return false;
+                }
+                return true;
+            });
+            
+            processDashboardData(filteredData);
+        }
+
+        // Helper: Gracefully handle Empty States for Charts
+        function toggleChartEmptyState(chartId, isEmpty) {
+            const canvas = document.getElementById(chartId);
+            const container = canvas.parentElement;
+            let overlay = container.querySelector('.no-data-overlay');
+
+            if (isEmpty) {
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.className = 'no-data-overlay absolute inset-0 flex items-center justify-center z-10 text-gray-400 font-bold bg-white';
+                    overlay.innerHTML = '<div class="text-center"><i class="fa-solid fa-chart-bar text-3xl mb-2 opacity-50"></i><p>No Data Found for selected filters</p></div>';
+                    container.appendChild(overlay);
+                }
+                overlay.classList.remove('hidden');
+                canvas.style.visibility = 'hidden';
+            } else {
+                if (overlay) overlay.classList.add('hidden');
+                canvas.style.visibility = 'visible';
+            }
+        }
+
         function processDashboardData(data) {
-            let ok = 0, ng = 0;
+            let ok = 0, ng = 0, tok = 0;
             let defectReasons = {};
             let trendData = {};
+            let sprayerStats = {};
+            let pointStats = {}; // To calculate Variance
 
             data.forEach(row => {
-                if(row.judgement === 'OK') ok++; else ng++;
+                // Judgement Stats
+                if(row.judgement === 'OK') ok++; 
+                else if (row.judgement === 'NG') ng++;
+                else if (row.judgement === 'TOK') tok++;
+                
+                // Pareto (Defects)
                 if(row.judgement === 'NG' && row.remarks) {
                     let r = row.remarks.trim();
                     defectReasons[r] = (defectReasons[r] || 0) + 1;
                 }
 
+                // Sprayer Stats
+                if (!sprayerStats[row.sprayer]) sprayerStats[row.sprayer] = { OK: 0, NG: 0, TOK: 0 };
+                sprayerStats[row.sprayer][row.judgement] = (sprayerStats[row.sprayer][row.judgement] || 0) + 1;
+
+                // Averages & Variances
                 let vals = Object.values(row.guValues).filter(v => typeof v === 'number');
                 if(vals.length > 0) {
+                    // Trend (Overall Avg)
                     let avg = vals.reduce((a,b)=>a+b,0) / vals.length;
-                    let dateStr = new Date(row.date).toISOString().split('T')[0];
-                    if(!trendData[dateStr]) trendData[dateStr] = {sum:0, count:0};
+                    let dateParsed = parseDateStandard(row.date);
+                    let dateStr = flatpickr.formatDate(dateParsed, "d/m/y");
+                    
+                    if(!trendData[dateStr]) trendData[dateStr] = { sum: 0, count: 0, rawDate: dateParsed };
                     trendData[dateStr].sum += avg;
                     trendData[dateStr].count++;
                 }
+
+                // Variance per Key Point
+                Object.keys(row.guValues).forEach(pointId => {
+                    let val = Number(row.guValues[pointId]);
+                    if (!isNaN(val)) {
+                        if (!pointStats[pointId]) pointStats[pointId] = { sum: 0, count: 0 };
+                        pointStats[pointId].sum += val;
+                        pointStats[pointId].count++;
+                    }
+                });
             });
 
-            const total = ok + ng;
-            document.getElementById('dash-total').innerText = total;
-            document.getElementById('dash-ok-rate').innerText = total > 0 ? Math.round((ok/total)*100) + '%' : '0%';
-            document.getElementById('dash-total-ng').innerText = ng;
+            // Update KPI Cards
+            const total = ok + ng + tok;
+            document.getElementById('kpi-total').innerText = total;
+            document.getElementById('kpi-yield').innerText = total > 0 ? Math.round((ok/total)*100) + '%' : '0%';
+            document.getElementById('kpi-ng').innerText = ng;
+            
+            // Top Defect
+            const sortedDefects = Object.entries(defectReasons).sort((a,b)=>b[1]-a[1]);
+            document.getElementById('kpi-defect').innerText = sortedDefects.length > 0 ? sortedDefects[0][0] : '-';
 
-            renderPieChart(ok, ng);
-            renderBarChart(defectReasons);
-            renderLineChart(trendData);
+            // Render Charts securely with empty state checks
+            renderChartJudgement(ok, ng, tok);
+            renderChartPareto(defectReasons);
+            renderChartSprayer(sprayerStats);
+            renderChartTrend(trendData);
+            renderChartVariance(pointStats);
         }
 
-        function renderPieChart(ok, ng) {
+        // CHART 1: Judgement Donut
+        function renderChartJudgement(ok, ng, tok) {
+            const total = ok + ng + tok;
+            toggleChartEmptyState('chart-pie-judgement', total === 0);
             if(appState.charts.pie) appState.charts.pie.destroy();
-            const ctx = document.getElementById('chartPie').getContext('2d');
+            if(total === 0) return;
+
+            const ctx = document.getElementById('chart-pie-judgement').getContext('2d');
             appState.charts.pie = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['OK', 'NG'],
-                    datasets: [{ data: [ok, ng], backgroundColor: ['#22c55e', '#ef4444'], borderWidth: 0 }]
+                    labels: ['OK', 'NG', 'TOK'],
+                    datasets: [{ data: [ok, ng, tok], backgroundColor: ['#22c55e', '#ef4444', '#eab308'], borderWidth: 0 }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
             });
         }
 
-        function renderBarChart(reasons) {
-            if(appState.charts.bar) appState.charts.bar.destroy();
-            const ctx = document.getElementById('chartBar').getContext('2d');
-            const sorted = Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0,5); 
+        // CHART 2: Defect Pareto
+        function renderChartPareto(reasons) {
+            const keys = Object.keys(reasons);
+            toggleChartEmptyState('chart-bar-pareto', keys.length === 0);
+            if(appState.charts.pareto) appState.charts.pareto.destroy();
+            if(keys.length === 0) return;
+
+            const ctx = document.getElementById('chart-bar-pareto').getContext('2d');
+            const sorted = Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0, 10); 
             
-            appState.charts.bar = new Chart(ctx, {
+            appState.charts.pareto = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: sorted.map(i => i[0]),
-                    datasets: [{ label: 'Count', data: sorted.map(i => i[1]), backgroundColor: '#3b82f6', borderRadius: 4 }]
+                    datasets: [{ label: 'Defect Count', data: sorted.map(i => i[1]), backgroundColor: '#8b5cf6', borderRadius: 4 }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
             });
         }
 
-        function renderLineChart(trendData) {
-            if(appState.charts.line) appState.charts.line.destroy();
-            const ctx = document.getElementById('chartLine').getContext('2d');
-            const sortedDates = Object.keys(trendData).sort();
-            const averages = sortedDates.map(d => trendData[d].sum / trendData[d].count);
+        // CHART 3: NG Rate by Sprayer (Stacked)
+        function renderChartSprayer(stats) {
+            const sprayers = Object.keys(stats);
+            toggleChartEmptyState('chart-bar-sprayer', sprayers.length === 0);
+            if(appState.charts.sprayer) appState.charts.sprayer.destroy();
+            if(sprayers.length === 0) return;
 
-            appState.charts.line = new Chart(ctx, {
+            const ctx = document.getElementById('chart-bar-sprayer').getContext('2d');
+            const dataOK = sprayers.map(s => stats[s].OK || 0);
+            const dataNG = sprayers.map(s => stats[s].NG || 0);
+            const dataTOK = sprayers.map(s => stats[s].TOK || 0);
+
+            appState.charts.sprayer = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sprayers,
+                    datasets: [
+                        { label: 'NG', data: dataNG, backgroundColor: '#ef4444' },
+                        { label: 'TOK', data: dataTOK, backgroundColor: '#eab308' },
+                        { label: 'OK', data: dataOK, backgroundColor: '#22c55e' }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+                }
+            });
+        }
+
+        // CHART 4: Average GU Trend (Line)
+        function renderChartTrend(trendData) {
+            const keys = Object.keys(trendData);
+            toggleChartEmptyState('chart-line-trend', keys.length === 0);
+            if(appState.charts.trend) appState.charts.trend.destroy();
+            if(keys.length === 0) return;
+
+            const ctx = document.getElementById('chart-line-trend').getContext('2d');
+            const sortedEntries = Object.values(trendData).sort((a,b) => a.rawDate - b.rawDate);
+            const labels = sortedEntries.map(e => flatpickr.formatDate(e.rawDate, "d/m"));
+            const averages = sortedEntries.map(e => (e.sum / e.count).toFixed(1));
+
+            appState.charts.trend = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: sortedDates,
+                    labels: labels,
                     datasets: [{
-                        label: 'Avg Gloss Unit', data: averages, borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 2, fill: true, tension: 0.3
+                        label: 'Avg Gloss Unit', data: averages, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 3, fill: true, tension: 0.4, pointBackgroundColor: '#3b82f6'
                     }]
                 },
                 options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // CHART 5: Key Point Variance (Bar)
+        function renderChartVariance(pointStats) {
+            const keys = Object.keys(pointStats);
+            toggleChartEmptyState('chart-bar-variance', keys.length === 0);
+            if(appState.charts.variance) appState.charts.variance.destroy();
+            if(keys.length === 0) return;
+
+            const ctx = document.getElementById('chart-bar-variance').getContext('2d');
+            
+            // Sort by Point ID naturally if possible (e.g. FC1, FC2)
+            const sortedPoints = keys.sort((a, b) => {
+                let numA = parseInt(a.replace(/\D/g, '')) || 0;
+                let numB = parseInt(b.replace(/\D/g, '')) || 0;
+                return numA - numB;
+            });
+
+            const labels = sortedPoints;
+            const averages = sortedPoints.map(p => (pointStats[p].sum / pointStats[p].count).toFixed(1));
+
+            appState.charts.variance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Avg GU at Point',
+                        data: averages,
+                        backgroundColor: '#0ea5e9',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { min: 0 } }
+                }
             });
         }
 
