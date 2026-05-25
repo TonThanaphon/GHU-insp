@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GU Data Collection & Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- jQuery & DataTables -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Flatpickr (Date Picker) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .nav-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; font-weight: 600; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .dt-button { padding: 0.5rem 1rem; border-radius: 0.375rem; background: #3b82f6; color: white; border: none; cursor: pointer; }
+        .dataTables_wrapper .dataTables_filter input { border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.25rem 0.5rem; margin-left: 0.5rem; outline: none; }
+        .dataTables_wrapper .dataTables_length select { border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.25rem; outline: none; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Image Map Container */
+        .img-map-container { position: relative; display: inline-block; width: 100%; max-width: 800px; }
+        .img-map-container img { width: 100%; height: auto; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); display: block;}
+        
+        /* Enhanced Dots for Values */
+        .dot { position: absolute; width: 34px; height: 34px; border-radius: 50%; transform: translate(-50%, -50%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 9px; line-height: 1.2; font-weight: bold; color: white; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4); transition: transform 0.1s; }
+        .dot span.val { font-size: 11px; }
+        .dot:hover { transform: translate(-50%, -50%) scale(1.15); z-index: 10; }
+        .dot-empty { background-color: #ef4444; } /* Red */
+        .dot-filled { background-color: #22c55e; } /* Green */
+        .dot-admin { background-color: #3b82f6; } /* Blue */
+    </style>
+</head>
+<body class="text-gray-800 h-screen flex flex-col">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm z-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-layer-group text-blue-600 text-2xl mr-3"></i>
+                    <span class="font-bold text-xl tracking-tight text-gray-900">Project GHL</span>
+                </div>
+                <div class="flex items-center space-x-1 sm:space-x-4 overflow-x-auto">
+                    <button onclick="navigate('entry')" id="nav-entry" class="nav-active px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition whitespace-nowrap">
+                        <i class="fa-solid fa-pen-to-square mr-1"></i> Data Entry
+                    </button>
+                    <button onclick="navigate('dashboard')" id="nav-dashboard" class="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition whitespace-nowrap">
+                        <i class="fa-solid fa-chart-pie mr-1"></i> Dashboard
+                    </button>
+                    <button onclick="navigate('reports')" id="nav-reports" class="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition whitespace-nowrap">
+                        <i class="fa-solid fa-table mr-1"></i> Reports
+                    </button>
+                    <button onclick="checkAdmin()" id="nav-admin" class="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition whitespace-nowrap">
+                        <i class="fa-solid fa-gear mr-1"></i> Admin
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- 1. DATA ENTRY SECTION -->
+        <section id="sec-entry" class="max-w-5xl mx-auto fade-in block">
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-2 space-y-3 md:space-y-0">
+                    <h2 class="text-2xl font-bold"><i class="fa-solid fa-clipboard-check text-blue-500 mr-2"></i>New Inspection Entry</h2>
+                    
+                    <!-- Entry Mode Toggle -->
+                    <div class="flex bg-gray-100 p-1 rounded-lg border border-gray-200 w-full md:w-auto">
+                        <button id="btn-mode-single" onclick="setEntryMode('single')" class="flex-1 md:flex-none px-4 py-1.5 text-sm font-semibold rounded-md bg-white shadow-sm text-blue-600 transition">Single Part</button>
+                        <button id="btn-mode-set" onclick="setEntryMode('set')" class="flex-1 md:flex-none px-4 py-1.5 text-sm font-semibold rounded-md text-gray-500 hover:text-gray-700 transition">Complete Set</button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <div class="relative">
+                            <input type="text" id="entry-date" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-white cursor-pointer" placeholder="DD/MM/YY" onchange="saveDraft()">
+                            <i class="fa-solid fa-calendar absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Part</label>
+                        <select id="entry-part" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-gray-50" onchange="loadPartMap()">
+                            <option value="" disabled selected>Select Part...</option>
+                            <option value="Front Cover">Front Cover</option>
+                            <option value="Middle Seat">Middle Seat</option>
+                            <option value="Rear Cover">Rear Cover</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Sprayer</label>
+                        <select id="entry-sprayer" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-gray-50" onchange="saveDraft()"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                        <select id="entry-color" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-gray-50" onchange="saveDraft()"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                        <select id="entry-location" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-gray-50" onchange="saveDraft()"></select>
+                    </div>
+                </div>
+
+                <!-- Interactive Image Area -->
+                <div id="entry-map-area" class="hidden flex flex-col items-center border-t pt-6">
+                    <p class="text-sm text-gray-500 mb-3"><i class="fa-solid fa-info-circle mr-1"></i>Click on the red dots to input GU values.</p>
+                    <div class="img-map-container" id="entry-img-container">
+                        <img id="entry-img" src="" alt="Part Image" class="w-full">
+                        <div id="entry-dots-layer"></div>
+                    </div>
+                    
+                    <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Remarks (Defect Reason if NG)</label>
+                            <input type="text" id="entry-remarks" placeholder="e.g., HG, LG, Dust..." class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-gray-50" oninput="saveDraft()">
+                        </div>
+                        
+                        <!-- NEW Judgement Toggle Group -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Judgement</label>
+                            <div class="flex rounded-md shadow-sm w-full h-[42px]" role="group">
+                                <button type="button" id="btn-ok" onclick="setJudgement('OK')" class="w-1/3 text-sm font-bold border border-gray-300 rounded-l-md bg-gray-100 text-gray-500 hover:bg-green-50 transition">OK</button>
+                                <button type="button" id="btn-ng" onclick="setJudgement('NG')" class="w-1/3 text-sm font-bold border-t border-b border-r border-gray-300 bg-gray-100 text-gray-500 hover:bg-red-50 transition">NG</button>
+                                <button type="button" id="btn-tok" onclick="setJudgement('TOK')" class="w-1/3 text-sm font-bold border-t border-b border-r border-gray-300 rounded-r-md bg-gray-100 text-gray-500 hover:bg-yellow-50 transition">TOK</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Single Mode Buttons -->
+                    <div id="action-single" class="w-full flex flex-col sm:flex-row items-end sm:items-center justify-end space-y-3 sm:space-y-0 sm:space-x-3 mt-4 border-t pt-4">
+                        <span id="entry-progress" class="text-sm font-medium text-gray-600 sm:mr-auto mb-2 sm:mb-0">0/0 Completed</span>
+                        <button onclick="clearDraft()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition font-medium w-full sm:w-auto">Clear Draft</button>
+                        <button onclick="submitEntry()" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition font-bold shadow-md flex items-center justify-center w-full sm:w-auto">
+                            <i class="fa-solid fa-paper-plane mr-2"></i> Submit Single
+                        </button>
+                    </div>
+
+                    <!-- Set Mode Buttons -->
+                    <div id="action-set" class="w-full hidden flex-col items-end space-y-3 mt-4 border-t pt-4">
+                        <div class="flex flex-wrap space-x-2 text-xs font-semibold text-gray-500 mb-1 w-full justify-end" id="set-status-badges">
+                            <!-- Populated dynamically -->
+                        </div>
+                        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                            <button onclick="savePartToSet()" class="bg-indigo-100 text-indigo-700 border border-indigo-200 px-4 py-2 rounded-md hover:bg-indigo-200 transition font-medium shadow-sm w-full sm:w-auto">Save to Set</button>
+                            <button onclick="submitFullSet()" id="btn-submit-set" disabled class="bg-gray-400 text-white px-6 py-2 rounded-md transition font-bold shadow-md flex items-center justify-center cursor-not-allowed w-full sm:w-auto">
+                                <i class="fa-solid fa-layer-group mr-2"></i> Submit Full Set
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="entry-placeholder" class="text-center py-12 text-gray-400">
+                    <i class="fa-solid fa-image text-5xl mb-3 opacity-50"></i>
+                    <p>Select a part to begin inspection.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. DASHBOARD SECTION -->
+        <section id="sec-dashboard" class="max-w-7xl mx-auto hidden">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800"><i class="fa-solid fa-chart-line text-blue-500 mr-2"></i>Performance Dashboard</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- Summary Cards -->
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500">
+                    <h3 class="text-gray-500 text-sm font-medium">Total Inspections</h3>
+                    <p class="text-3xl font-bold text-gray-800 mt-1" id="dash-total">0</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500">
+                    <h3 class="text-gray-500 text-sm font-medium">Overall OK Rate</h3>
+                    <p class="text-3xl font-bold text-gray-800 mt-1" id="dash-ok-rate">0%</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-red-500">
+                    <h3 class="text-gray-500 text-sm font-medium">Total NG</h3>
+                    <p class="text-3xl font-bold text-gray-800 mt-1" id="dash-total-ng">0</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl shadow-sm p-5">
+                    <h3 class="text-lg font-semibold mb-4 text-center">Judgement Breakdown</h3>
+                    <div class="relative h-64 w-full flex justify-center">
+                        <canvas id="chartPie"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-5">
+                    <h3 class="text-lg font-semibold mb-4 text-center">Defect Reasons (Remarks)</h3>
+                    <div class="relative h-64 w-full">
+                        <canvas id="chartBar"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-5 lg:col-span-2">
+                    <h3 class="text-lg font-semibold mb-4 text-center">Average GU Trend Over Time</h3>
+                    <div class="relative h-72 w-full">
+                        <canvas id="chartLine"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. REPORTS SECTION -->
+        <section id="sec-reports" class="max-w-7xl mx-auto hidden">
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-2xl font-bold mb-6 border-b pb-2"><i class="fa-solid fa-table-list text-blue-500 mr-2"></i>Inspection Reports</h2>
+                <div class="overflow-x-auto">
+                    <!-- Excel-Style Multi-Select Filter implementation handled completely in JS initComplete -->
+                    <table id="reportsTable" class="display w-full text-sm text-left text-gray-500">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Date</th>
+                                <th>Part</th>
+                                <th>Sprayer</th>
+                                <th>Color</th>
+                                <th>Location</th>
+                                <th>Avg GU</th>
+                                <th>Judgement</th>
+                                <th>Remarks</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsBody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. ADMIN SECTION -->
+        <section id="sec-admin" class="max-w-5xl mx-auto hidden">
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-2xl font-bold mb-6 border-b pb-2"><i class="fa-solid fa-shield-halved text-red-500 mr-2"></i>Admin Area</h2>
+                
+                <div class="flex flex-wrap gap-2 mb-6 border-b pb-4">
+                    <button class="bg-blue-100 text-blue-700 font-semibold px-4 py-2 rounded-md" id="tab-btn-map" onclick="switchAdminTab('map')">Map & Images</button>
+                    <button class="bg-gray-100 text-gray-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-200" id="tab-btn-gu" onclick="switchAdminTab('gu')">Setting GU STD</button>
+                    <button class="bg-gray-100 text-gray-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-200" id="tab-btn-data" onclick="switchAdminTab('data')">Master Data</button>
+                </div>
+
+                <!-- Coordinate Mapper & Image Upload Tab -->
+                <div id="admin-tab-map" class="block">
+                    <!-- Image Upload Widget -->
+                    <div class="bg-gray-50 border rounded-lg p-5 mb-8">
+                        <h3 class="text-md font-semibold text-gray-700 mb-3"><i class="fa-solid fa-cloud-arrow-up text-blue-500 mr-2"></i>Upload Base Part Image</h3>
+                        <div class="flex flex-col md:flex-row md:items-end space-y-4 md:space-y-0 md:space-x-4">
+                            <div class="flex-1">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Select Part</label>
+                                <select id="upload-part" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-white">
+                                    <option value="" disabled selected>Select Part...</option>
+                                    <option value="Front Cover">Front Cover</option>
+                                    <option value="Middle Seat">Middle Seat</option>
+                                    <option value="Rear Cover">Rear Cover</option>
+                                </select>
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Choose Image File</label>
+                                <input type="file" id="upload-file" accept="image/*" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 border bg-white p-1.5 text-sm">
+                            </div>
+                            <button onclick="handleImageUpload()" class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition font-medium shadow-sm w-full md:w-auto">
+                                <i class="fa-solid fa-upload mr-1"></i> Upload Image
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Coordinate Mapper Widget -->
+                    <h3 class="text-md font-semibold text-gray-700 mb-3"><i class="fa-solid fa-crosshairs text-red-500 mr-2"></i>Map Key Points</h3>
+                    <div class="flex flex-col md:flex-row md:items-end space-y-3 md:space-y-0 md:space-x-4 mb-4">
+                        <div class="flex-1 w-full">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Select Part to Map</label>
+                            <select id="admin-part" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-gray-50" onchange="loadAdminMap()">
+                                <option value="" disabled selected>Select Part...</option>
+                                <option value="Front Cover">Front Cover</option>
+                                <option value="Middle Seat">Middle Seat</option>
+                                <option value="Rear Cover">Rear Cover</option>
+                            </select>
+                        </div>
+                        <div class="flex space-x-2 w-full md:w-auto">
+                            <button onclick="clearAdminPoints()" class="flex-1 md:flex-none bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition"><i class="fa-solid fa-trash mr-1"></i> Clear</button>
+                            <button onclick="saveAdminPoints()" class="flex-1 md:flex-none bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition"><i class="fa-solid fa-save mr-1"></i> Save Map</button>
+                        </div>
+                    </div>
+                    
+                    <div id="admin-map-area" class="hidden">
+                        <p class="text-sm text-gray-500 mb-2"><i class="fa-solid fa-mouse-pointer mr-1"></i> Click anywhere on the image to add a measurement point.</p>
+                        <div class="img-map-container" id="admin-img-container" onclick="handleMapClick(event)">
+                            <img id="admin-img" src="" alt="Part Image" class="w-full pointer-events-none">
+                            <div id="admin-dots-layer"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW: Setting GU STD Tab -->
+                <div id="admin-tab-gu" class="hidden">
+                    <div class="bg-gray-50 border rounded-lg p-5 mb-8">
+                        <h3 class="text-md font-semibold text-gray-700 mb-4"><i class="fa-solid fa-sliders text-purple-500 mr-2"></i>GU Standards & Tolerances</h3>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Select Part</label>
+                            <select id="admin-gu-part" class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-white" onchange="loadGuStandards()">
+                                <option value="" disabled selected>Select Part...</option>
+                                <option value="Front Cover">Front Cover</option>
+                                <option value="Middle Seat">Middle Seat</option>
+                                <option value="Rear Cover">Rear Cover</option>
+                            </select>
+                        </div>
+                        
+                        <div class="grid grid-cols-4 gap-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-2 hidden" id="gu-rules-header">
+                            <div>Min Value (>=)</div>
+                            <div>Max Value (<=)</div>
+                            <div>Dot Color</div>
+                            <div class="text-right">Action</div>
+                        </div>
+                        
+                        <div id="gu-rules-container" class="space-y-2 mb-4">
+                            <p class="text-sm text-gray-400 italic">Select a part to manage standards.</p>
+                        </div>
+                        
+                        <div class="flex justify-between items-center border-t pt-4 hidden" id="gu-rules-actions">
+                            <button onclick="addGuRule()" class="text-sm text-blue-600 font-medium hover:text-blue-800"><i class="fa-solid fa-plus mr-1"></i> Add Rule</button>
+                            <button onclick="saveGuStandards()" class="bg-purple-600 text-white px-5 py-2 rounded-md hover:bg-purple-700 transition font-medium shadow-sm"><i class="fa-solid fa-save mr-1"></i> Save Standards</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Master Data Tab -->
+                <div id="admin-tab-data" class="hidden">
+                    <p class="text-gray-500 italic mb-4">Master Data Management coming soon. Please manage Sprayers, Colors, and Locations directly in the Google Sheet 'MasterData' tab for now.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modals -->
+    <!-- View Map Modal -->
+    <div id="viewMapModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
+                <h3 class="text-lg font-bold" id="viewMapTitle">Inspection View</h3>
+                <button onclick="$('#viewMapModal').addClass('hidden')" class="text-gray-500 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 flex justify-center bg-gray-100 relative">
+                <div class="img-map-container shadow-md">
+                    <img id="view-img" src="" alt="Part">
+                    <div id="view-dots-layer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Application Logic -->
+    <script>
+        // ==========================================
+        // 1. BACKEND & API WRAPPER
+        // ==========================================
+        const MOCK_DB = {
+            masterData: {
+                sprayers: ["Auto-Robot A", "Auto-Robot B", "Manual - John", "Manual - Sarah"],
+                colors: ["Gloss Black", "Matte Black", "Metallic Silver", "Pearl White"],
+                locations: ["Line 1", "Line 2", "Booth A"],
+                imageUrls: {},
+                guStandards: {
+                    "Front Cover": [
+                        { min: 90, max: 200, color: "#22c55e" }, // Green
+                        { min: 80, max: 89, color: "#eab308" }, // Yellow
+                        { min: 0, max: 79, color: "#ef4444" }  // Red
+                    ]
+                },
+                coordinates: {
+                    "Front Cover": [
+                        { id: "FC1", x: 0.2, y: 0.3 }, { id: "FC2", x: 0.5, y: 0.2 }, { id: "FC3", x: 0.8, y: 0.3 },
+                        { id: "FC4", x: 0.3, y: 0.5 }, { id: "FC5", x: 0.7, y: 0.5 }, { id: "FC6", x: 0.5, y: 0.8 }
+                    ],
+                    "Middle Seat": [
+                        { id: "MS1", x: 0.3, y: 0.4 }, { id: "MS2", x: 0.7, y: 0.4 }, { id: "MS3", x: 0.5, y: 0.7 }
+                    ]
+                }
+            },
+            reports: [
+                { timestamp: "2026-05-20T08:30:00Z", part: "Front Cover", date: "20/05/26", color: "Gloss Black", sprayer: "Auto-Robot A", location: "Line 1", judgement: "OK", remarks: "", guValues: {"FC1": 95, "FC2": 96, "FC3": 94, "FC4": 95, "FC5": 97, "FC6": 95} },
+                { timestamp: "2026-05-22T14:45:00Z", part: "Middle Seat", date: "22/05/26", color: "Pearl White", sprayer: "Auto-Robot B", location: "Line 2", judgement: "OK", remarks: "", guValues: {"MS1": 92, "MS2": 91, "MS3": 93} }
+            ]
+        };
+
+        // IF HOSTING LOCALLY IN VS CODE: Paste your published Google Apps Script Web App URL here
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwkiJ75nUSel42r2Uiya72pdkB8pl8ulHTrNt3j0x2buCxOwZ-QXyo7OmWp-7_WA-6m/exec"; 
+
+        const API = {
+            run: function(method, ...args) {
+                return new Promise(async (resolve, reject) => {
+                    if (GAS_WEB_APP_URL) {
+                        try {
+                            const payload = { action: method };
+                            
+                            if (method === 'saveCoordinates') payload.data = { partName: args[0], pointsArray: args[1] };
+                            else if (method === 'saveGuStandard') payload.data = { partName: args[0], standardsArray: args[1] };
+                            else if (method === 'submitEntry') payload.data = args[0];
+                            else if (method === 'uploadImage') payload.data = args[0];
+                            
+                            const response = await fetch(GAS_WEB_APP_URL, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                                body: JSON.stringify(payload),
+                                redirect: 'follow'
+                            });
+                            
+                            const resData = await response.json();
+                            if (resData.status === 'success') {
+                                resolve(resData.data);
+                            } else {
+                                if (resData.message === "Unknown API action") {
+                                    reject(new Error("Unknown API action"));
+                                } else {
+                                    reject(new Error(resData.message));
+                                }
+                            }
+                        } catch (e) {
+                            reject(e);
+                        }
+                    } else if (typeof google !== 'undefined' && google.script && google.script.run) {
+                        google.script.run
+                            .withSuccessHandler(resolve)
+                            .withFailureHandler(reject)
+                            [method](...args);
+                    } else {
+                        // Mock DB Fallback
+                        console.log(`[API Mock] Executing ${method}`, args);
+                        setTimeout(() => {
+                            if (method === 'getMasterData') resolve(JSON.parse(JSON.stringify(MOCK_DB.masterData)));
+                            else if (method === 'getReportData') resolve(JSON.parse(JSON.stringify(MOCK_DB.reports)));
+                            else if (method === 'saveCoordinates') { MOCK_DB.masterData.coordinates[args[0]] = args[1]; resolve(true); } 
+                            else if (method === 'saveGuStandard') { MOCK_DB.masterData.guStandards[args[0]] = args[1]; resolve(true); }
+                            else if (method === 'submitEntry') { MOCK_DB.reports.push(args[0]); resolve({success: true}); }
+                            else if (method === 'uploadImage') {
+                                const mockUrl = `https://placehold.co/800x400/93c5fd/ffffff?text=${encodeURI(args[0].partName)}+Mock+Upload`;
+                                MOCK_DB.masterData.imageUrls[args[0].partName] = mockUrl;
+                                resolve({ url: mockUrl });
+                            }
+                        }, 1000); 
+                    }
+                });
+            }
+        };
+
+        // ==========================================
+        // 2. GLOBAL STATE
+        // ==========================================
+        let appState = {
+            masterData: null,
+            entryMode: 'single', // 'single' or 'set'
+            setDrafts: { "Front Cover": null, "Middle Seat": null, "Rear Cover": null },
+            entryForm: { part: '', judgement: '', guValues: {} },
+            adminPoints: [],
+            adminGuRules: [],
+            currentReports: [], 
+            charts: {}
+        };
+
+        const FALLBACK_IMAGE_URLS = {
+            "Front Cover": "https://placehold.co/800x400/1e293b/ffffff?text=Front+Cover+Geometry",
+            "Middle Seat": "https://placehold.co/800x400/0f172a/ffffff?text=Middle+Seat+Geometry",
+            "Rear Cover": "https://placehold.co/800x400/334155/ffffff?text=Rear+Cover+Geometry"
+        };
+        
+        function formatDriveUrl(url) {
+            if (!url) return url;
+            if (url.includes('drive.google.com')) {
+                let fileId = null;
+                const idParamMatch = url.match(/id=([a-zA-Z0-9_-]+)/);
+                const fileDMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                
+                if (idParamMatch && idParamMatch[1]) fileId = idParamMatch[1];
+                else if (fileDMatch && fileDMatch[1]) fileId = fileDMatch[1];
+                
+                if (fileId) return `https://lh3.googleusercontent.com/d/${fileId}`;
+            }
+            return url;
+        }
+
+        function getPartImage(partName) {
+            if (appState.masterData && appState.masterData.imageUrls && appState.masterData.imageUrls[partName]) {
+                return formatDriveUrl(appState.masterData.imageUrls[partName]);
+            }
+            return FALLBACK_IMAGE_URLS[partName] || "https://placehold.co/800x400/cccccc/000000?text=No+Image";
+        }
+
+        // ==========================================
+        // 3. INITIALIZATION
+        // ==========================================
+        $(document).ready(async function() {
+            Swal.fire({ title: 'Loading...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+            
+            // Initialize Flatpickr for Data Entry
+            window.fpEntry = flatpickr("#entry-date", {
+                dateFormat: "d/m/y",
+                defaultDate: "today",
+                onChange: saveDraft
+            });
+
+            try {
+                appState.masterData = await API.run('getMasterData');
+                if(!appState.masterData.imageUrls) appState.masterData.imageUrls = {};
+                if(!appState.masterData.guStandards) appState.masterData.guStandards = {};
+                populateDropdowns();
+                loadDraft();
+                Swal.close();
+            } catch (err) {
+                Swal.fire('Error', 'Failed to load database connection.', 'error');
+                console.error(err);
+            }
+        });
+
+        function populateDropdowns() {
+            const populate = (id, data) => {
+                const sel = document.getElementById(id);
+                sel.innerHTML = '<option value="" disabled selected>Select...</option>';
+                data.forEach(item => { sel.add(new Option(item, item)); });
+            };
+            populate('entry-sprayer', appState.masterData.sprayers);
+            populate('entry-color', appState.masterData.colors);
+            populate('entry-location', appState.masterData.locations);
+        }
+
+        function navigate(view) {
+            ['entry', 'dashboard', 'reports', 'admin'].forEach(v => {
+                document.getElementById(`sec-${v}`).classList.add('hidden');
+                document.getElementById(`sec-${v}`).classList.remove('block');
+                document.getElementById(`nav-${v}`).classList.remove('nav-active');
+            });
+            document.getElementById(`sec-${view}`).classList.remove('hidden');
+            document.getElementById(`sec-${view}`).classList.add('block');
+            document.getElementById(`nav-${view}`).classList.add('nav-active');
+
+            if (view === 'dashboard') loadDashboard();
+            if (view === 'reports') loadReports();
+        }
+
+        // ==========================================
+        // 5. DATA ENTRY MODULE
+        // ==========================================
+        
+        function setEntryMode(mode) {
+            appState.entryMode = mode;
+            document.getElementById('btn-mode-single').className = mode === 'single' 
+                ? "flex-1 md:flex-none px-4 py-1.5 text-sm font-semibold rounded-md bg-white shadow-sm text-blue-600 transition" 
+                : "flex-1 md:flex-none px-4 py-1.5 text-sm font-semibold rounded-md text-gray-500 hover:text-gray-700 transition";
+            document.getElementById('btn-mode-set').className = mode === 'set' 
+                ? "flex-1 md:flex-none px-4 py-1.5 text-sm font-semibold rounded-md bg-white shadow-sm text-blue-600 transition" 
+                : "flex-1 md:flex-none px-4 py-1.5 text-sm font-semibold rounded-md text-gray-500 hover:text-gray-700 transition";
+            
+            if (mode === 'single') {
+                document.getElementById('action-single').classList.remove('hidden');
+                document.getElementById('action-set').classList.add('hidden');
+                document.getElementById('action-single').classList.add('flex');
+                document.getElementById('action-set').classList.remove('flex');
+            } else {
+                document.getElementById('action-single').classList.add('hidden');
+                document.getElementById('action-set').classList.remove('hidden');
+                document.getElementById('action-single').classList.remove('flex');
+                document.getElementById('action-set').classList.add('flex');
+                updateSetProgress();
+            }
+        }
+
+        function setJudgement(val) {
+            appState.entryForm.judgement = val;
+            
+            // Reset all buttons
+            ['ok','ng','tok'].forEach(btn => {
+                const el = document.getElementById(`btn-${btn}`);
+                if(el) {
+                    el.classList.remove('bg-green-500', 'text-white', 'bg-red-500', 'bg-yellow-400');
+                    el.classList.add('bg-gray-100', 'text-gray-500');
+                }
+            });
+            
+            if (val) {
+                const activeEl = document.getElementById(`btn-${val.toLowerCase()}`);
+                if (activeEl) {
+                    activeEl.classList.remove('bg-gray-100', 'text-gray-500');
+                    if (val === 'OK') activeEl.classList.add('bg-green-500', 'text-white');
+                    if (val === 'NG') activeEl.classList.add('bg-red-500', 'text-white');
+                    if (val === 'TOK') activeEl.classList.add('bg-yellow-400', 'text-white');
+                }
+            }
+            saveDraft();
+        }
+
+        function loadPartMap() {
+            const part = document.getElementById('entry-part').value;
+            appState.entryForm.part = part;
+            
+            if (appState.entryMode === 'set' && appState.setDrafts[part]) {
+                const draft = appState.setDrafts[part];
+                document.getElementById('entry-sprayer').value = draft.sprayer || '';
+                document.getElementById('entry-color').value = draft.color || '';
+                document.getElementById('entry-location').value = draft.location || '';
+                document.getElementById('entry-remarks').value = draft.remarks || '';
+                appState.entryForm.guValues = draft.guValues || {};
+                setJudgement(draft.judgement || '');
+            } else if (!appState.entryForm.guValues || Object.keys(appState.entryForm.guValues).length === 0) {
+                 appState.entryForm.guValues = {};
+                 setJudgement(''); 
+            }
+
+            document.getElementById('entry-img').src = getPartImage(part);
+            
+            document.getElementById('entry-placeholder').classList.add('hidden');
+            document.getElementById('entry-map-area').classList.remove('hidden');
+            document.getElementById('entry-map-area').classList.add('flex');
+
+            renderEntryDots();
+            saveDraft();
+        }
+
+        function renderEntryDots() {
+            const layer = document.getElementById('entry-dots-layer');
+            layer.innerHTML = '';
+            
+            const coords = appState.masterData.coordinates[appState.entryForm.part] || [];
+            let completed = 0;
+
+            coords.forEach(pt => {
+                const val = appState.entryForm.guValues[pt.id];
+                const hasVal = val !== undefined && val !== '';
+                if(hasVal) completed++;
+
+                const dot = document.createElement('div');
+                dot.className = `dot ${hasVal ? 'dot-filled' : 'dot-empty'}`;
+                dot.style.left = `${pt.x * 100}%`;
+                dot.style.top = `${pt.y * 100}%`;
+                
+                // Show ID and Numerical Value cleanly
+                dot.innerHTML = `<span>${pt.id.replace(/^[A-Z]+/, '')}</span>` + (hasVal ? `<span class="val">${val}</span>` : ``);
+                dot.title = `${pt.id}${hasVal ? ': ' + val : ''}`;
+                
+                dot.onclick = () => promptGUValue(pt.id);
+                layer.appendChild(dot);
+            });
+
+            document.getElementById('entry-progress').innerText = `${completed}/${coords.length} Completed`;
+        }
+
+        async function promptGUValue(pointId) {
+            const currentVal = appState.entryForm.guValues[pointId] || '';
+            const { value: guValue } = await Swal.fire({
+                title: `Enter GU for ${pointId}`,
+                input: 'number',
+                inputLabel: 'Gloss Unit Value',
+                inputValue: currentVal,
+                showCancelButton: true,
+                inputValidator: (value) => {
+                    if (!value) return 'You need to write something!';
+                    if (value < 0 || value > 200) return 'Value out of realistic range (0-200)';
+                }
+            });
+
+            if (guValue) {
+                appState.entryForm.guValues[pointId] = Number(guValue);
+                renderEntryDots();
+                saveDraft();
+            }
+        }
+
+        function saveDraft() {
+            const draft = {
+                date: document.getElementById('entry-date').value,
+                part: document.getElementById('entry-part').value,
+                sprayer: document.getElementById('entry-sprayer').value,
+                color: document.getElementById('entry-color').value,
+                location: document.getElementById('entry-location').value,
+                remarks: document.getElementById('entry-remarks').value,
+                judgement: appState.entryForm.judgement,
+                guValues: appState.entryForm.guValues
+            };
+            if (appState.entryMode === 'single') {
+                localStorage.setItem('ghl_draft', JSON.stringify(draft));
+            }
+        }
+
+        function loadDraft() {
+            const draftStr = localStorage.getItem('ghl_draft');
+            if (draftStr && appState.entryMode === 'single') {
+                try {
+                    const draft = JSON.parse(draftStr);
+                    if(draft.part) {
+                        if(draft.date) window.fpEntry.setDate(draft.date, false, "d/m/y");
+                        document.getElementById('entry-part').value = draft.part;
+                        document.getElementById('entry-sprayer').value = draft.sprayer;
+                        document.getElementById('entry-color').value = draft.color;
+                        document.getElementById('entry-location').value = draft.location;
+                        document.getElementById('entry-remarks').value = draft.remarks;
+                        appState.entryForm.guValues = draft.guValues || {};
+                        appState.entryForm.judgement = draft.judgement || '';
+                        setJudgement(draft.judgement || '');
+                        loadPartMap();
+                    }
+                } catch(e) { console.error("Draft parse error"); }
+            }
+        }
+
+        function clearDraft() {
+            if (appState.entryMode === 'single') localStorage.removeItem('ghl_draft');
+            window.fpEntry.setDate(new Date());
+            appState.entryForm.guValues = {};
+            setJudgement('');
+            document.getElementById('entry-part').value = '';
+            document.getElementById('entry-sprayer').value = '';
+            document.getElementById('entry-color').value = '';
+            document.getElementById('entry-location').value = '';
+            document.getElementById('entry-remarks').value = '';
+            document.getElementById('entry-placeholder').classList.remove('hidden');
+            document.getElementById('entry-map-area').classList.add('hidden');
+        }
+
+        // --- NEW VALIDATION FUNCTION ---
+        function validateEntryForm() {
+            const missingFields = [];
+            
+            if (!document.getElementById('entry-date').value) missingFields.push("Date");
+            if (!document.getElementById('entry-part').value) missingFields.push("Part");
+            if (!document.getElementById('entry-sprayer').value) missingFields.push("Sprayer");
+            if (!document.getElementById('entry-color').value) missingFields.push("Color");
+            if (!document.getElementById('entry-location').value) missingFields.push("Location");
+            if (!appState.entryForm.judgement) missingFields.push("Judgement (OK/NG/TOK)");
+
+            if (missingFields.length > 0) {
+                Swal.fire({
+                    title: 'Missing Information',
+                    html: `Please fill out the following mandatory fields:<br><br><b class="text-red-500">${missingFields.join('<br>')}</b>`,
+                    icon: 'warning',
+                    confirmButtonColor: '#3b82f6'
+                });
+                return false;
+            }
+            return true;
+        }
+
+        function savePartToSet() {
+            if (!validateEntryForm()) return; // Added Validation check
+            
+            const part = document.getElementById('entry-part').value;
+            
+            appState.setDrafts[part] = {
+                date: document.getElementById('entry-date').value,
+                part: part,
+                sprayer: document.getElementById('entry-sprayer').value,
+                color: document.getElementById('entry-color').value,
+                location: document.getElementById('entry-location').value,
+                remarks: document.getElementById('entry-remarks').value,
+                judgement: appState.entryForm.judgement,
+                guValues: JSON.parse(JSON.stringify(appState.entryForm.guValues))
+            };
+            
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `${part} saved to set!`, showConfirmButton: false, timer: 2000 });
+            updateSetProgress();
+        }
+        
+        function updateSetProgress() {
+            const container = document.getElementById('set-status-badges');
+            container.innerHTML = '';
+            
+            let allCompleted = true;
+            ['Front Cover', 'Middle Seat', 'Rear Cover'].forEach(p => {
+                const isDone = appState.setDrafts[p] !== null;
+                if (!isDone) allCompleted = false;
+                
+                const badge = document.createElement('span');
+                badge.className = `px-2 py-1 rounded ${isDone ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400 border border-dashed border-gray-300'}`;
+                badge.innerHTML = `<i class="fa-solid ${isDone ? 'fa-check-circle' : 'fa-circle'} mr-1"></i> ${p}`;
+                container.appendChild(badge);
+            });
+            
+            const submitBtn = document.getElementById('btn-submit-set');
+            if (allCompleted) {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                submitBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                submitBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            }
+        }
+        
+        async function submitFullSet() {
+            const payloads = Object.values(appState.setDrafts).map(draft => {
+                return {
+                    part: draft.part,
+                    date: draft.date,
+                    sprayer: draft.sprayer,
+                    color: draft.color,
+                    location: draft.location,
+                    remarks: draft.remarks,
+                    judgement: draft.judgement || 'OK',
+                    guValues: draft.guValues
+                };
+            });
+            
+            Swal.fire({ title: 'Submitting Set...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                for (let payload of payloads) {
+                    await API.run('submitEntry', payload);
+                }
+                Swal.fire('Success', 'Complete set saved successfully!', 'success');
+                appState.setDrafts = { "Front Cover": null, "Middle Seat": null, "Rear Cover": null };
+                updateSetProgress();
+                clearDraft();
+            } catch(e) {
+                Swal.fire('Error', e.message || 'Failed to submit set.', 'error');
+            }
+        }
+
+        async function submitEntry() {
+            if (!validateEntryForm()) return; // Added Validation Check
+
+            const part = document.getElementById('entry-part').value;
+            const dateVal = document.getElementById('entry-date').value;
+            const sprayer = document.getElementById('entry-sprayer').value;
+            const color = document.getElementById('entry-color').value;
+            const loc = document.getElementById('entry-location').value;
+            const remarks = document.getElementById('entry-remarks').value;
+            const judgement = appState.entryForm.judgement;
+            const coords = appState.masterData.coordinates[part] || [];
+
+            const filledCount = Object.keys(appState.entryForm.guValues).length;
+            if (filledCount < coords.length) {
+                const res = await Swal.fire({
+                    title: 'Incomplete Data',
+                    text: `You have only filled ${filledCount}/${coords.length} points. Submit anyway?`,
+                    icon: 'warning',
+                    showCancelButton: true
+                });
+                if(!res.isConfirmed) return;
+            }
+
+            const payload = {
+                part: part,
+                date: dateVal, 
+                sprayer: sprayer,
+                color: color,
+                location: loc,
+                remarks: remarks,
+                judgement: judgement,
+                guValues: appState.entryForm.guValues
+            };
+
+            Swal.fire({ title: 'Saving...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            try {
+                await API.run('submitEntry', payload);
+                Swal.fire('Success', 'Data saved successfully!', 'success');
+                clearDraft();
+            } catch(e) {
+                Swal.fire('Error', e.message || 'Failed to save data.', 'error');
+            }
+        }
+
+        // ==========================================
+        // 6. DASHBOARD MODULE
+        // ==========================================
+        async function loadDashboard() {
+            Swal.fire({ title: 'Loading Data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const rawData = await API.run('getReportData');
+                processDashboardData(rawData);
+                Swal.close();
+            } catch(e) {
+                Swal.fire('Error', 'Failed to load dashboard data.', 'error');
+            }
+        }
+
+        function processDashboardData(data) {
+            let ok = 0, ng = 0;
+            let defectReasons = {};
+            let trendData = {};
+
+            data.forEach(row => {
+                if(row.judgement === 'OK') ok++; else ng++;
+                if(row.judgement === 'NG' && row.remarks) {
+                    let r = row.remarks.trim();
+                    defectReasons[r] = (defectReasons[r] || 0) + 1;
+                }
+
+                let vals = Object.values(row.guValues).filter(v => typeof v === 'number');
+                if(vals.length > 0) {
+                    let avg = vals.reduce((a,b)=>a+b,0) / vals.length;
+                    let dateStr = new Date(row.date).toISOString().split('T')[0];
+                    if(!trendData[dateStr]) trendData[dateStr] = {sum:0, count:0};
+                    trendData[dateStr].sum += avg;
+                    trendData[dateStr].count++;
+                }
+            });
+
+            const total = ok + ng;
+            document.getElementById('dash-total').innerText = total;
+            document.getElementById('dash-ok-rate').innerText = total > 0 ? Math.round((ok/total)*100) + '%' : '0%';
+            document.getElementById('dash-total-ng').innerText = ng;
+
+            renderPieChart(ok, ng);
+            renderBarChart(defectReasons);
+            renderLineChart(trendData);
+        }
+
+        function renderPieChart(ok, ng) {
+            if(appState.charts.pie) appState.charts.pie.destroy();
+            const ctx = document.getElementById('chartPie').getContext('2d');
+            appState.charts.pie = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['OK', 'NG'],
+                    datasets: [{ data: [ok, ng], backgroundColor: ['#22c55e', '#ef4444'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        function renderBarChart(reasons) {
+            if(appState.charts.bar) appState.charts.bar.destroy();
+            const ctx = document.getElementById('chartBar').getContext('2d');
+            const sorted = Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0,5); 
+            
+            appState.charts.bar = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(i => i[0]),
+                    datasets: [{ label: 'Count', data: sorted.map(i => i[1]), backgroundColor: '#3b82f6', borderRadius: 4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        }
+
+        function renderLineChart(trendData) {
+            if(appState.charts.line) appState.charts.line.destroy();
+            const ctx = document.getElementById('chartLine').getContext('2d');
+            const sortedDates = Object.keys(trendData).sort();
+            const averages = sortedDates.map(d => trendData[d].sum / trendData[d].count);
+
+            appState.charts.line = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sortedDates,
+                    datasets: [{
+                        label: 'Avg Gloss Unit', data: averages, borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', borderWidth: 2, fill: true, tension: 0.3
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // ==========================================
+        // 7. REPORTS MODULE
+        // ==========================================
+        let dataTableInstance = null;
+        
+        // Add flatpickr custom search logic globally once
+        if (!window.dateRangeFilterSetup) {
+            window.dateRangeFilter = function(settings, data, dataIndex) {
+                if (!window.dtDateRange || window.dtDateRange.length === 0) return true;
+                let rowDateStr = data[1]; // Date column is index 1
+                let parts = rowDateStr.split('/');
+                if(parts.length !== 3) return true; 
+                
+                let rowDate = new Date(parseInt("20" + parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                let start = window.dtDateRange[0];
+                let end = window.dtDateRange[1] || start;
+                
+                rowDate.setHours(0,0,0,0);
+                start.setHours(0,0,0,0);
+                end.setHours(0,0,0,0);
+                
+                return rowDate >= start && rowDate <= end;
+            };
+            $.fn.dataTable.ext.search.push(window.dateRangeFilter);
+            window.dateRangeFilterSetup = true;
+        }
+
+        async function loadReports() {
+            Swal.fire({ title: 'Loading Reports...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const rawData = await API.run('getReportData');
+                appState.currentReports = rawData;
+
+                if (dataTableInstance) dataTableInstance.destroy();
+                
+                const tbody = document.getElementById('reportsBody');
+                tbody.innerHTML = '';
+
+                rawData.forEach((row, index) => {
+                    let vals = Object.values(row.guValues).filter(v => typeof v === 'number');
+                    let avg = vals.length > 0 ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : '-';
+                    
+                    // Format Timestamp
+                    let tsStr = '-';
+                    if (row.timestamp) {
+                        let d = new Date(row.timestamp);
+                        if (!isNaN(d)) {
+                            tsStr = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear().toString().slice(-2) + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+                        }
+                    }
+                    
+                    // Format Date to strict DD/MM/YY (guards against older ISO data saved before flatpickr)
+                    let dateStr = '-';
+                    if (row.date) {
+                        if (row.date.includes('-') || row.date.includes('T')) {
+                            let d = new Date(row.date);
+                            if (!isNaN(d)) dateStr = flatpickr.formatDate(d, "d/m/y");
+                            else dateStr = row.date;
+                        } else {
+                            dateStr = row.date; 
+                        }
+                    }
+                    
+                    let tr = document.createElement('tr');
+                    tr.className = 'border-b hover:bg-gray-50';
+                    tr.innerHTML = `
+                        <td class="px-4 py-3">${tsStr}</td>
+                        <td class="px-4 py-3">${dateStr}</td>
+                        <td class="px-4 py-3 font-medium">${row.part}</td>
+                        <td class="px-4 py-3">${row.sprayer}</td>
+                        <td class="px-4 py-3">${row.color}</td>
+                        <td class="px-4 py-3">${row.location}</td>
+                        <td class="px-4 py-3">${avg}</td>
+                        <td class="px-4 py-3 font-bold ${row.judgement==='OK'?'text-green-600':(row.judgement==='TOK'?'text-yellow-500':'text-red-600')}">${row.judgement}</td>
+                        <td class="px-4 py-3">${row.remarks || '-'}</td>
+                        <td class="px-4 py-3">
+                            <button onclick='viewReportDetails(${index})' class="bg-blue-100 text-blue-600 p-1.5 rounded hover:bg-blue-200" title="View Map">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Excel-Style Multi-Select Checkbox DataTables Init
+                dataTableInstance = $('#reportsTable').DataTable({
+                    pageLength: 10,
+                    order: [[0, 'desc']], 
+                    dom: '<"flex justify-between items-center mb-4"lf>rt<"flex justify-between items-center mt-4"ip>',
+                    initComplete: function () {
+                        const filterableColumns = ['Part', 'Sprayer', 'Color', 'Location', 'Judgement', 'Remarks'];
+                        
+                        this.api().columns().every(function () {
+                            let column = this;
+                            let th = $(column.header());
+                            let title = th.text().trim();
+
+                            if (filterableColumns.includes(title)) {
+                                th.addClass('relative');
+                                let icon = $('<i class="fas fa-filter ml-2 text-gray-300 hover:text-gray-500 cursor-pointer transition-colors filter-icon" title="Filter"></i>');
+                                th.append(icon);
+
+                                let dropdown = $(`
+                                    <div class="dt-filter-dropdown hidden absolute left-0 top-full mt-2 z-50 bg-white border border-gray-200 shadow-xl rounded-md w-48 text-sm font-normal text-left text-gray-700 font-sans cursor-default">
+                                        <div class="max-h-48 overflow-y-auto p-3 space-y-2 filter-options"></div>
+                                        <div class="border-t border-gray-200 p-2 flex justify-between bg-gray-50 rounded-b-md">
+                                            <button class="text-xs font-semibold text-gray-500 hover:text-gray-800 clear-filter px-2 py-1">Clear</button>
+                                            <button class="text-xs font-semibold bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 apply-filter">Apply</button>
+                                        </div>
+                                    </div>
+                                `);
+
+                                let uniqueVals = [];
+                                column.data().each(function (d) {
+                                    let val = $('<div>').html(d).text().trim();
+                                    if (val && !uniqueVals.includes(val)) {
+                                        uniqueVals.push(val);
+                                    }
+                                });
+                                uniqueVals.sort();
+
+                                let optionsHtml = '';
+                                uniqueVals.forEach(function (val) {
+                                    optionsHtml += `
+                                        <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                                            <input type="checkbox" value="${val}" class="form-checkbox h-3.5 w-3.5 text-blue-600 rounded border-gray-300">
+                                            <span class="truncate">${val}</span>
+                                        </label>
+                                    `;
+                                });
+                                
+                                dropdown.find('.filter-options').html(optionsHtml);
+                                th.append(dropdown);
+
+                                dropdown.on('click', function(e) { e.stopPropagation(); });
+                                
+                                icon.on('click', function(e) {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    $('.dt-filter-dropdown').not(dropdown).addClass('hidden');
+                                    dropdown.toggleClass('hidden');
+                                });
+
+                                dropdown.find('.apply-filter').on('click', function(e) {
+                                    e.stopPropagation();
+                                    let checked = [];
+                                    dropdown.find('input[type="checkbox"]:checked').each(function() {
+                                        checked.push($.fn.dataTable.util.escapeRegex($(this).val()));
+                                    });
+                                    let regex = checked.length ? '^(' + checked.join('|') + ')$' : '';
+                                    column.search(regex, true, false).draw();
+                                    
+                                    if (checked.length) {
+                                        icon.removeClass('text-gray-300 hover:text-gray-500').addClass('text-blue-600');
+                                    } else {
+                                        icon.addClass('text-gray-300 hover:text-gray-500').removeClass('text-blue-600');
+                                    }
+                                    dropdown.addClass('hidden');
+                                });
+
+                                dropdown.find('.clear-filter').on('click', function(e) {
+                                    e.stopPropagation();
+                                    dropdown.find('input[type="checkbox"]').prop('checked', false);
+                                    column.search('', true, false).draw();
+                                    icon.addClass('text-gray-300 hover:text-gray-500').removeClass('text-blue-600');
+                                    dropdown.addClass('hidden');
+                                });
+                            } else if (title === 'Date') {
+                                th.addClass('relative');
+                                let dateIcon = $('<i class="fas fa-calendar-alt ml-2 text-gray-300 hover:text-gray-500 cursor-pointer transition-colors filter-icon" title="Filter Date Range"></i>');
+                                th.append(dateIcon);
+                                
+                                let dateInput = $('<input type="text" class="absolute opacity-0 w-1 h-1 top-full right-0" style="pointer-events:none;" />');
+                                th.append(dateInput);
+                                
+                                let fpFilter = flatpickr(dateInput[0], {
+                                    mode: "range",
+                                    dateFormat: "d/m/y",
+                                    onClose: function(selectedDates) {
+                                        if (selectedDates.length > 0) {
+                                            window.dtDateRange = selectedDates;
+                                            dateIcon.removeClass('text-gray-300 hover:text-gray-500').addClass('text-blue-600');
+                                        } else {
+                                            window.dtDateRange = null;
+                                            dateIcon.addClass('text-gray-300 hover:text-gray-500').removeClass('text-blue-600');
+                                        }
+                                        dataTableInstance.draw();
+                                    }
+                                });
+
+                                dateIcon.on('click', function(e) {
+                                    e.stopPropagation();
+                                    fpFilter.open();
+                                });
+                            }
+                        });
+                        
+                        $(document).off('click.dtFilter').on('click.dtFilter', function() {
+                            $('.dt-filter-dropdown').addClass('hidden');
+                        });
+                    }
+                });
+
+                Swal.close();
+            } catch(e) {
+                Swal.fire('Error', 'Failed to load reports.', 'error');
+            }
+        }
+
+        function viewReportDetails(index) {
+            const rowObj = appState.currentReports[index];
+            if(!rowObj) return;
+
+            document.getElementById('viewMapTitle').innerText = `${rowObj.part} - ${new Date(rowObj.date).toLocaleDateString()} (${rowObj.judgement})`;
+            document.getElementById('view-img').src = getPartImage(rowObj.part);
+            
+            const layer = document.getElementById('view-dots-layer');
+            layer.innerHTML = '';
+            const coords = appState.masterData.coordinates[rowObj.part] || [];
+            
+            // Helper to get dynamically mapped color safely
+            const getStandardColor = (part, val) => {
+                if(!appState.masterData || !appState.masterData.guStandards) return '#22c55e';
+                const standards = appState.masterData.guStandards[part] || [];
+                for (let std of standards) {
+                    if (val >= std.min && val <= std.max) return std.color;
+                }
+                return '#22c55e'; // default fallback (Green)
+            };
+
+            coords.forEach(pt => {
+                const val = rowObj.guValues[pt.id];
+                if (val !== undefined && val !== '') {
+                    const dynamicColor = getStandardColor(rowObj.part, val);
+                    const dot = document.createElement('div');
+                    dot.className = `absolute text-white font-bold text-xs rounded-md px-1.5 py-0.5 shadow-lg transform -translate-x-1/2 -translate-y-1/2 whitespace-nowrap`;
+                    dot.style.left = `${pt.x * 100}%`;
+                    dot.style.top = `${pt.y * 100}%`;
+                    dot.style.backgroundColor = dynamicColor;
+                    dot.innerHTML = `<span class="text-white opacity-80 text-[10px] block leading-none">${pt.id.replace(/^[A-Z]+/, '')}</span>${val}`;
+                    layer.appendChild(dot);
+                }
+            });
+
+            $('#viewMapModal').removeClass('hidden');
+        }
+
+        // ==========================================
+        // 8. ADMIN MODULE
+        // ==========================================
+        async function checkAdmin() {
+            const { value: pin } = await Swal.fire({
+                title: 'Enter Admin PIN',
+                input: 'password',
+                inputPlaceholder: 'Try 1234',
+                showCancelButton: true
+            });
+
+            if (pin === '1234') { 
+                navigate('admin');
+            } else if(pin) {
+                Swal.fire('Access Denied', 'Incorrect PIN', 'error');
+            }
+        }
+
+        function switchAdminTab(tab) {
+            document.getElementById('admin-tab-map').classList.add('hidden');
+            document.getElementById('admin-tab-gu').classList.add('hidden');
+            document.getElementById('admin-tab-data').classList.add('hidden');
+            document.getElementById(`admin-tab-${tab}`).classList.remove('hidden');
+            
+            document.getElementById('tab-btn-map').className = tab==='map' ? "bg-blue-100 text-blue-700 font-semibold px-4 py-2 rounded-md" : "bg-gray-100 text-gray-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-200";
+            document.getElementById('tab-btn-gu').className = tab==='gu' ? "bg-blue-100 text-blue-700 font-semibold px-4 py-2 rounded-md" : "bg-gray-100 text-gray-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-200";
+            document.getElementById('tab-btn-data').className = tab==='data' ? "bg-blue-100 text-blue-700 font-semibold px-4 py-2 rounded-md" : "bg-gray-100 text-gray-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-200";
+        }
+        
+        async function handleImageUpload() {
+            const partSelect = document.getElementById('upload-part');
+            const fileInput = document.getElementById('upload-file');
+            
+            const part = partSelect.value;
+            const file = fileInput.files[0];
+            
+            if (!part) return Swal.fire('Notice', 'Please select a part from the dropdown first.', 'warning');
+            if (!file) return Swal.fire('Notice', 'Please select an image file to upload.', 'warning');
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            
+            reader.onload = async function() {
+                const base64String = reader.result;
+                const base64Data = base64String.split(',')[1];
+                
+                const payload = { action: "uploadImage", partName: part, fileName: file.name, mimeType: file.type, base64Data: base64Data };
+                
+                Swal.fire({ title: 'Uploading to Google Drive...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                try {
+                    const result = await API.run('uploadImage', payload);
+                    appState.masterData.imageUrls[part] = result.url;
+                    
+                    if (document.getElementById('admin-part').value === part) {
+                        document.getElementById('admin-img').src = getPartImage(part);
+                    }
+                    
+                    Swal.fire('Success', 'Image successfully uploaded and mapped!', 'success');
+                    fileInput.value = ''; 
+                } catch (error) {
+                    Swal.fire('Error', error.message || 'Upload failed.', 'error');
+                }
+            };
+            reader.onerror = function() { Swal.fire('Error', 'Failed to read file locally.', 'error'); };
+        }
+
+        function loadAdminMap() {
+            const part = document.getElementById('admin-part').value;
+            document.getElementById('admin-img').src = getPartImage(part);
+            document.getElementById('admin-map-area').classList.remove('hidden');
+            
+            appState.adminPoints = JSON.parse(JSON.stringify(appState.masterData.coordinates[part] || []));
+            renderAdminDots();
+        }
+
+        function renderAdminDots() {
+            const layer = document.getElementById('admin-dots-layer');
+            layer.innerHTML = '';
+            
+            appState.adminPoints.forEach((pt, index) => {
+                const dot = document.createElement('div');
+                dot.className = 'dot dot-admin';
+                dot.style.left = `${pt.x * 100}%`;
+                dot.style.top = `${pt.y * 100}%`;
+                dot.innerHTML = pt.id.replace(/^[A-Z]+/, ''); 
+                dot.title = "Right click to remove";
+                
+                dot.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    appState.adminPoints.splice(index, 1);
+                    renderAdminDots();
+                };
+                layer.appendChild(dot);
+            });
+        }
+
+        async function handleMapClick(e) {
+            const part = document.getElementById('admin-part').value;
+            if(!part) return;
+
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = (e.clientY - rect.top) / rect.height;
+
+            const nextNum = appState.adminPoints.length + 1;
+            const prefixes = { "Front Cover": "FC", "Middle Seat": "MS", "Rear Cover": "RC" };
+            const prefix = prefixes[part] || "PT";
+            const suggestedId = `${prefix}${nextNum}`;
+
+            const { value: pointId } = await Swal.fire({
+                title: 'Add Point',
+                input: 'text',
+                inputLabel: `Point ID (e.g. ${prefix}1)`,
+                inputValue: suggestedId,
+                showCancelButton: true
+            });
+
+            if (pointId) {
+                if(appState.adminPoints.find(p => p.id === pointId)) {
+                    return Swal.fire('Error', 'Point ID already exists!', 'error');
+                }
+                appState.adminPoints.push({ id: pointId, x: parseFloat(x.toFixed(4)), y: parseFloat(y.toFixed(4)) });
+                renderAdminDots();
+            }
+        }
+
+        function clearAdminPoints() {
+            appState.adminPoints = [];
+            renderAdminDots();
+        }
+
+        async function saveAdminPoints() {
+            const part = document.getElementById('admin-part').value;
+            if(!part) return Swal.fire('Error', 'No part selected', 'error');
+
+            Swal.fire({ title: 'Saving...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                await API.run('saveCoordinates', part, appState.adminPoints);
+                appState.masterData.coordinates[part] = JSON.parse(JSON.stringify(appState.adminPoints));
+                Swal.fire('Saved!', 'Coordinates updated successfully.', 'success');
+            } catch(e) {
+                Swal.fire('Error', e.message || 'Failed to save coordinates.', 'error');
+            }
+        }
+
+        // --- Admin GU Standards Logic ---
+        function loadGuStandards() {
+            const part = document.getElementById('admin-gu-part').value;
+            if(!part) return;
+            
+            document.getElementById('gu-rules-header').classList.remove('hidden');
+            document.getElementById('gu-rules-actions').classList.remove('hidden');
+            
+            appState.adminGuRules = JSON.parse(JSON.stringify(appState.masterData.guStandards[part] || []));
+            renderGuRules();
+        }
+        
+        function renderGuRules() {
+            const container = document.getElementById('gu-rules-container');
+            container.innerHTML = '';
+            
+            if (appState.adminGuRules.length === 0) {
+                container.innerHTML = '<p class="text-sm text-gray-400 italic mb-2">No standard rules mapped yet.</p>';
+                return;
+            }
+            
+            appState.adminGuRules.forEach((rule, index) => {
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-4 gap-4 items-center bg-white p-2 rounded border border-gray-200 shadow-sm';
+                row.innerHTML = `
+                    <div><input type="number" onchange="updateRule(${index}, 'min', this.value)" value="${rule.min}" class="w-full border p-1 rounded text-sm bg-gray-50" /></div>
+                    <div><input type="number" onchange="updateRule(${index}, 'max', this.value)" value="${rule.max}" class="w-full border p-1 rounded text-sm bg-gray-50" /></div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <input type="color" onchange="updateRule(${index}, 'color', this.value)" value="${rule.color}" class="h-8 w-12 cursor-pointer border rounded bg-gray-50 p-0.5" />
+                            <span class="text-xs text-gray-500 uppercase hidden sm:inline">${rule.color}</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <button onclick="removeGuRule(${index})" class="text-red-500 hover:text-red-700 p-1 bg-red-50 rounded"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+        
+        window.updateRule = (index, field, value) => {
+            appState.adminGuRules[index][field] = field !== 'color' ? Number(value) : value;
+        }
+        
+        window.addGuRule = () => {
+            appState.adminGuRules.push({ min: 0, max: 100, color: "#22c55e" }); // defaults
+            renderGuRules();
+        }
+        
+        window.removeGuRule = (index) => {
+            appState.adminGuRules.splice(index, 1);
+            renderGuRules();
+        }
+        
+        async function saveGuStandards() {
+            const part = document.getElementById('admin-gu-part').value;
+            if(!part) return Swal.fire('Error', 'No part selected', 'error');
+
+            Swal.fire({ title: 'Saving Standards...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                await API.run('saveGuStandard', part, appState.adminGuRules);
+                appState.masterData.guStandards[part] = JSON.parse(JSON.stringify(appState.adminGuRules));
+                Swal.fire('Saved!', 'GU Tolerance Standards updated successfully.', 'success');
+            } catch(e) {
+                console.error("Save STD Error:", e);
+                if (e.message && e.message.includes("Unknown API action")) {
+                    Swal.fire({
+                        title: 'Deployment Required',
+                        icon: 'warning',
+                        html: 'The Google Apps Script is running an older version.<br><br><b>How to fix:</b><br>1. Open Apps Script<br>2. Click <b>Deploy > Manage deployments</b><br>3. Click the <b>Pencil icon</b> (Edit)<br>4. Set Version to <b>New version</b><br>5. Click <b>Deploy</b>'
+                    });
+                } else {
+                    Swal.fire('Error', e.message || 'Failed to save standards.', 'error');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
