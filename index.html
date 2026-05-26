@@ -121,7 +121,6 @@
                         <i class="fa-solid fa-gear mr-1"></i> <span class="hidden md:inline">Admin</span>
                     </button>
 
-                    <!-- RBAC Profile Section -->
                     <div id="user-profile-section" class="hidden items-center border-l pl-2 sm:pl-4 ml-2 space-x-3 border-gray-200">
                         <span id="nav-user-info" class="text-xs sm:text-sm font-bold text-gray-700 whitespace-nowrap flex items-center bg-gray-100 px-2 py-1 rounded">
                         </span>
@@ -187,12 +186,14 @@
                         <div id="entry-dots-layer"></div>
                     </div>
                     
-                    <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Remarks (Defect Reason if NG)</label>
-                            <input type="text" id="entry-remarks" placeholder="e.g., HG, LG, Dust..." class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-gray-50" oninput="saveDraft()">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Job Type</label>
+                            <div class="flex rounded-md shadow-sm w-full h-[42px]" role="group">
+                                <button type="button" id="btn-job-new" onclick="setJobType('New')" class="no-tap-highlight w-1/2 text-sm font-bold border border-gray-300 rounded-l-md bg-blue-600 text-white transition-colors">New</button>
+                                <button type="button" id="btn-job-repaint" onclick="setJobType('Repaint')" class="no-tap-highlight w-1/2 text-sm font-bold border-t border-b border-r border-gray-300 rounded-r-md bg-gray-100 text-gray-500 transition-colors">Repaint</button>
+                            </div>
                         </div>
-                        
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Judgement</label>
                             <div class="flex rounded-md shadow-sm w-full h-[42px]" role="group">
@@ -200,6 +201,10 @@
                                 <button type="button" id="btn-ng" onclick="setJudgement('NG')" class="btn-judge-ng no-tap-highlight w-1/3 text-sm font-bold border-t border-b border-r border-gray-300 bg-gray-100 text-gray-500 transition-colors">NG</button>
                                 <button type="button" id="btn-tok" onclick="setJudgement('TOK')" class="btn-judge-tok no-tap-highlight w-1/3 text-sm font-bold border-t border-b border-r border-gray-300 rounded-r-md bg-gray-100 text-gray-500 transition-colors">TOK</button>
                             </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Remarks (Defect Reason if NG)</label>
+                            <input type="text" id="entry-remarks" placeholder="e.g., HG, LG, Dust..." class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-gray-50" oninput="saveDraft()">
                         </div>
                     </div>
 
@@ -233,13 +238,29 @@
         <section id="sec-dashboard" class="max-w-7xl mx-auto hidden">
             <div class="flex flex-col space-y-6">
                 
-                <div class="bg-white rounded-xl shadow-sm p-5 grid grid-cols-1 md:grid-cols-6 gap-4 border-l-4 border-blue-600 items-end">
-                    <div>
+                <!-- Expanded Filter Row -->
+                <div class="bg-white rounded-xl shadow-sm p-5 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 border-l-4 border-blue-600 items-start lg:items-end">
+                    <div class="col-span-2 md:col-span-2 lg:col-span-2">
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Date Range</label>
                         <div class="relative">
                             <input type="text" id="dash-filter-date" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 border p-2 text-sm bg-white cursor-pointer pr-8 h-[38px]" placeholder="Select dates...">
                             <i class="fa-solid fa-calendar absolute right-3 top-2.5 text-gray-400 pointer-events-none"></i>
                         </div>
+                        <div class="flex space-x-1 mt-1.5 overflow-x-auto pb-1">
+                            <button type="button" onclick="setDatePreset('today')" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] rounded border border-gray-200 transition whitespace-nowrap">Today</button>
+                            <button type="button" onclick="setDatePreset('yesterday')" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] rounded border border-gray-200 transition whitespace-nowrap">Yesterday</button>
+                            <button type="button" onclick="setDatePreset('thisWeek')" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] rounded border border-gray-200 transition whitespace-nowrap">This Week</button>
+                            <button type="button" onclick="setDatePreset('thisMonth')" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] rounded border border-gray-200 transition whitespace-nowrap">This Month</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Job Type</label>
+                        <select id="dash-filter-jobtype" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 border p-2 text-sm bg-white h-[38px]">
+                            <option value="ALL" selected>All Types</option>
+                            <option value="New">New</option>
+                            <option value="Repaint">Repaint</option>
+                            <option value="Unknown">Unknown (Legacy Data)</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Part Name</label>
@@ -284,7 +305,7 @@
                         </div>
                     </div>
 
-                    <div>
+                    <div class="col-span-2 md:col-span-4 lg:col-span-1 flex flex-col justify-end">
                         <button onclick="applyDashboardFilters()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition font-semibold shadow-sm flex items-center justify-center h-[38px]">
                             <i class="fa-solid fa-filter md:mr-2"></i> <span class="hidden md:inline">Apply</span>
                         </button>
@@ -299,22 +320,28 @@
                     </div>
                 </div>
 
+                <!-- TAB 1: OVERVIEW -->
                 <div id="dash-content-overview" class="block space-y-6">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                         <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 relative overflow-hidden">
                             <div class="absolute top-0 right-0 p-3 opacity-10"><i class="fa-solid fa-clipboard-list text-4xl text-blue-600"></i></div>
-                            <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Inspections</h3>
+                            <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">Inspections</h3>
                             <p class="text-3xl font-bold text-gray-800 mt-1" id="kpi-total">0</p>
                         </div>
                         <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 relative overflow-hidden">
                             <div class="absolute top-0 right-0 p-3 opacity-10"><i class="fa-solid fa-check-double text-4xl text-green-600"></i></div>
-                            <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">Overall Yield (OK)</h3>
+                            <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">Yield (OK)</h3>
                             <p class="text-3xl font-bold text-green-600 mt-1" id="kpi-yield">0%</p>
                         </div>
                         <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 relative overflow-hidden">
                             <div class="absolute top-0 right-0 p-3 opacity-10"><i class="fa-solid fa-triangle-exclamation text-4xl text-red-600"></i></div>
                             <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">Total NG</h3>
                             <p class="text-3xl font-bold text-red-600 mt-1" id="kpi-ng">0</p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-3 opacity-10"><i class="fa-solid fa-spray-can text-4xl text-orange-500"></i></div>
+                            <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider">Repaint Rate</h3>
+                            <p class="text-3xl font-bold text-orange-500 mt-1" id="kpi-repaint">0%</p>
                         </div>
                         <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 relative overflow-hidden">
                             <div class="absolute top-0 right-0 p-3 opacity-10"><i class="fa-solid fa-magnifying-glass-chart text-4xl text-purple-600"></i></div>
@@ -331,6 +358,7 @@
                     </div>
                 </div>
 
+                <!-- TAB 2: PERFORMANCE -->
                 <div id="dash-content-performance" class="hidden space-y-6">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
@@ -346,8 +374,15 @@
                             </div>
                         </div>
                     </div>
+                    <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+                        <h3 class="text-md font-semibold text-gray-700 mb-4 border-b pb-2">Yield Breakdown by Part</h3>
+                        <div class="relative h-72 w-full flex justify-center items-center">
+                            <canvas id="chart-bar-yield-part"></canvas>
+                        </div>
+                    </div>
                 </div>
 
+                <!-- TAB 3: ENGINEERING -->
                 <div id="dash-content-engineering" class="hidden space-y-6">
                     <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
                         <h3 class="text-md font-semibold text-gray-700 mb-4 border-b pb-2">Average GU Trend Over Time</h3>
@@ -383,6 +418,7 @@
                                 <th>Location</th>
                                 <th>Avg GU</th>
                                 <th>Judgement</th>
+                                <th>Job Type</th>
                                 <th>Remarks</th>
                                 <th>Recorded By</th>
                                 <th>Action</th>
@@ -566,8 +602,8 @@
                 }
             },
             reports: [
-                { timestamp: "2026-05-20T08:30:00Z", part: "Front Cover", date: "20/05/26", color: "Gloss Black", sprayer: "Auto-Robot A", location: "Line 1", judgement: "OK", remarks: "", recordedBy: "Mock Admin", guValues: {"FC1": 95, "FC2": 96, "FC3": 94, "FC4": 95, "FC5": 97, "FC6": 95} },
-                { timestamp: "2026-05-22T14:45:00Z", part: "Middle Seat", date: "22/05/26", color: "Pearl White", sprayer: "Auto-Robot B", location: "Line 2", judgement: "OK", remarks: "", recordedBy: "Mock Admin", guValues: {"MS1": 92, "MS2": 91, "MS3": 93} }
+                { timestamp: "2026-05-20T08:30:00Z", part: "Front Cover", date: "20/05/26", color: "Gloss Black", sprayer: "Auto-Robot A", location: "Line 1", judgement: "OK", jobType: "New", remarks: "", recordedBy: "Mock Admin", guValues: {"FC1": 95, "FC2": 96, "FC3": 94, "FC4": 95, "FC5": 97, "FC6": 95} },
+                { timestamp: "2026-05-22T14:45:00Z", part: "Middle Seat", date: "22/05/26", color: "Pearl White", sprayer: "Auto-Robot B", location: "Line 2", judgement: "NG", jobType: "Repaint", remarks: "Dust", recordedBy: "Mock Admin", guValues: {"MS1": 92, "MS2": 91, "MS3": 93} }
             ]
         };
 
@@ -671,7 +707,7 @@
             masterData: null,
             entryMode: 'single', 
             setDrafts: { "Front Cover": null, "Middle Seat": null, "Rear Cover": null },
-            entryForm: { part: '', judgement: '', guValues: {} },
+            entryForm: { part: '', judgement: '', jobType: 'New', guValues: {} },
             adminPoints: [],
             adminGuRules: [],
             currentReports: [],
@@ -680,8 +716,14 @@
             usersData: []
         };
 
+        const APP_PERMISSIONS = {
+            'Operator': ['nav-entry'],
+            'Viewer': ['nav-entry', 'nav-dashboard', 'nav-reports'],
+            'Admin': ['nav-entry', 'nav-dashboard', 'nav-reports', 'nav-admin']
+        };
+
         let usersTableInstance = null;
-        let dataTableInstance = null;
+        let dataTableInstance = null; // Defined only once here
         let idleTimer;
         const IDLE_TIMEOUT = 30 * 60 * 1000; 
         
@@ -702,10 +744,12 @@
             
             document.addEventListener('click', function(e) {
                 if (!e.target.closest('#dropdown-wrapper-sprayer')) {
-                    document.getElementById('dash-menu-sprayer')?.classList.add('hidden');
+                    const menu = document.getElementById('dash-menu-sprayer');
+                    if(menu) menu.classList.add('hidden');
                 }
                 if (!e.target.closest('#dropdown-wrapper-location')) {
-                    document.getElementById('dash-menu-location')?.classList.add('hidden');
+                    const menu = document.getElementById('dash-menu-location');
+                    if(menu) menu.classList.add('hidden');
                 }
             });
         }
@@ -747,14 +791,16 @@
             const stored = localStorage.getItem('ghl_user');
             if (stored) {
                 appState.currentUser = JSON.parse(stored);
-                document.getElementById('login-overlay').classList.add('hidden');
+                const overlay = document.getElementById('login-overlay');
+                if(overlay) overlay.classList.add('hidden');
                 initializeApp();
             } else {
-                document.getElementById('login-overlay').classList.remove('hidden');
+                const overlay = document.getElementById('login-overlay');
+                if(overlay) overlay.classList.remove('hidden');
             }
         }
 
-        async function handleLogin(e) {
+        window.handleLogin = async function(e) {
             e.preventDefault();
             const empId = document.getElementById('login-empid').value;
             const password = document.getElementById('login-password').value;
@@ -766,70 +812,89 @@
                 appState.currentUser = user;
                 localStorage.setItem('ghl_user', JSON.stringify(user));
                 
-                document.getElementById('login-overlay').classList.add('hidden');
+                const overlay = document.getElementById('login-overlay');
+                if(overlay) overlay.classList.add('hidden');
                 Swal.close();
                 
                 initializeApp();
             } catch (error) {
                 Swal.fire('Login Failed', error.message || 'Invalid credentials.', 'error');
             }
-        }
+        };
 
         function handleLogout(isIdle = false) {
+            // 1. Explicitly clear local session and timers
             appState.currentUser = null;
             localStorage.removeItem('ghl_user');
-            
-            document.getElementById('login-overlay').classList.remove('hidden');
-            document.getElementById('login-form').reset();
-            
-            document.getElementById('nav-dashboard').classList.add('hidden');
-            document.getElementById('nav-reports').classList.add('hidden');
-            document.getElementById('nav-admin').classList.add('hidden');
-            document.getElementById('user-profile-section').classList.add('hidden');
-            document.getElementById('user-profile-section').classList.remove('flex');
-            
             clearTimeout(idleTimer);
+            
+            // 2. Hide navigation and main content wrappers to prevent background bleed
+            const navBar = document.querySelector('nav');
+            if (navBar) navBar.classList.add('hidden');
+            
+            const mainApp = document.querySelector('main');
+            if (mainApp) mainApp.classList.add('hidden');
 
+            ['sec-entry', 'sec-dashboard', 'sec-reports', 'sec-admin'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            
+            // 3. Reveal a clean login screen
+            const loginOverlay = document.getElementById('login-overlay');
+            if (loginOverlay) loginOverlay.classList.remove('hidden');
+            
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) loginForm.reset();
+
+            // 4. Reload page to absolutely guarantee clean DOM and memory state
             if (isIdle) {
+                // Wait for the user to acknowledge the idle warning before reloading
                 Swal.fire({
                     title: 'Session Expired', 
                     text: 'You have been logged out due to inactivity.', 
                     icon: 'warning',
                     confirmButtonColor: '#3b82f6'
+                }).then(() => {
+                    window.location.reload();
                 });
+            } else {
+                window.location.reload();
             }
         }
 
-        function applyRoleUI() {
+        function applyRolePermissions() {
             if (!appState.currentUser) return;
             const role = appState.currentUser.role;
             
-            document.getElementById('nav-user-info').innerHTML = `<i class="fa-solid fa-user-circle mr-1 hidden sm:inline"></i> <span class="truncate max-w-[100px] sm:max-w-none inline-block">${appState.currentUser.fullName}</span> <span class="font-normal opacity-75 hidden sm:inline ml-1">(${role})</span>`;
-            document.getElementById('user-profile-section').classList.remove('hidden');
-            document.getElementById('user-profile-section').classList.add('flex');
+            const userInfo = document.getElementById('nav-user-info');
+            if(userInfo) userInfo.innerHTML = `<i class="fa-solid fa-user-circle mr-1 hidden sm:inline"></i> <span class="truncate max-w-[100px] sm:max-w-none inline-block">${appState.currentUser.fullName}</span> <span class="font-normal opacity-75 hidden sm:inline ml-1">(${role})</span>`;
+            
+            const profileSec = document.getElementById('user-profile-section');
+            if(profileSec) {
+                profileSec.classList.remove('hidden');
+                profileSec.classList.add('flex');
+            }
 
-            document.getElementById('nav-entry').classList.remove('hidden');
+            const allNavTabs = ['nav-entry', 'nav-dashboard', 'nav-reports', 'nav-admin'];
+            allNavTabs.forEach(tabId => {
+                const el = document.getElementById(tabId);
+                if (el) el.classList.add('hidden');
+            });
+
+            const allowedTabs = APP_PERMISSIONS[role] || [];
             
-            if (role === 'Viewer' || role === 'Admin') {
-                document.getElementById('nav-dashboard').classList.remove('hidden');
-                document.getElementById('nav-reports').classList.remove('hidden');
-            } else {
-                document.getElementById('nav-dashboard').classList.add('hidden');
-                document.getElementById('nav-reports').classList.add('hidden');
-            }
-            
-            if (role === 'Admin') {
-                document.getElementById('nav-admin').classList.remove('hidden');
-            } else {
-                document.getElementById('nav-admin').classList.add('hidden');
-            }
+            allowedTabs.forEach(tabId => {
+                const el = document.getElementById(tabId);
+                if (el) el.classList.remove('hidden');
+            });
             
             navigate('entry');
             resetIdleTimer();
         }
 
         async function initializeApp() {
-            applyRoleUI();
+            applyRolePermissions();
             Swal.fire({ title: 'Loading System...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
             
             if(!window.fpEntry) {
@@ -855,6 +920,10 @@
                 if(!appState.masterData.guStandards) appState.masterData.guStandards = {};
                 populateDropdowns();
                 loadDraft();
+                
+                // Initialize Job Type Default
+                setJobType(appState.entryForm.jobType || 'New');
+                
                 Swal.close();
             } catch (err) {
                 Swal.fire('Error', 'Failed to load database connection.', 'error');
@@ -863,10 +932,35 @@
         }
 
         // ==========================================
-        // UI HELPERS (Dropdowns, Tabs)
+        // UI HELPERS (Dropdowns, Tabs, Dates)
         // ==========================================
+        window.setDatePreset = function(preset) {
+            const today = new Date();
+            let start, end;
+            if (preset === 'today') {
+                start = today; end = today;
+            } else if (preset === 'yesterday') {
+                start = new Date(today); start.setDate(start.getDate() - 1);
+                end = start;
+            } else if (preset === 'thisWeek') {
+                start = new Date(today);
+                const day = start.getDay();
+                const diff = start.getDate() - day + (day === 0 ? -6 : 1); 
+                start.setDate(diff);
+                end = today;
+            } else if (preset === 'thisMonth') {
+                start = new Date(today.getFullYear(), today.getMonth(), 1);
+                end = today;
+            }
+            if (window.fpDash) {
+                window.fpDash.setDate([start, end], true);
+            }
+            applyDashboardFilters();
+        };
+
         function toggleDashDropdown(type) {
-            document.getElementById(`dash-menu-${type}`).classList.toggle('hidden');
+            const el = document.getElementById(`dash-menu-${type}`);
+            if(el) el.classList.toggle('hidden');
         }
         function dashSelectAll(type) {
             document.querySelectorAll(`#dash-options-${type} input[type="checkbox"]`).forEach(cb => cb.checked = true);
@@ -881,9 +975,11 @@
             const checked = Array.from(cbs).filter(cb => cb.checked);
             const textEl = document.getElementById(`dash-text-${type}`);
             
-            if (checked.length === 0) textEl.innerText = 'None Selected';
-            else if (checked.length === cbs.length) textEl.innerText = `All ${type.charAt(0).toUpperCase() + type.slice(1)}s`;
-            else textEl.innerText = `${checked.length} Selected`;
+            if(textEl) {
+                if (checked.length === 0) textEl.innerText = 'None Selected';
+                else if (checked.length === cbs.length) textEl.innerText = `All ${type.charAt(0).toUpperCase() + type.slice(1)}s`;
+                else textEl.innerText = `${checked.length} Selected`;
+            }
         }
 
         function populateDropdowns() {
@@ -937,13 +1033,26 @@
 
         function navigate(view) {
             ['entry', 'dashboard', 'reports', 'admin'].forEach(v => {
-                document.getElementById(`sec-${v}`).classList.add('hidden');
-                document.getElementById(`sec-${v}`).classList.remove('block');
-                document.getElementById(`nav-${v}`).classList.remove('nav-active');
+                const secEl = document.getElementById(`sec-${v}`);
+                const navEl = document.getElementById(`nav-${v}`);
+                if (secEl) {
+                    secEl.classList.add('hidden');
+                    secEl.classList.remove('block');
+                }
+                if (navEl) {
+                    navEl.classList.remove('nav-active');
+                }
             });
-            document.getElementById(`sec-${view}`).classList.remove('hidden');
-            document.getElementById(`sec-${view}`).classList.add('block');
-            document.getElementById(`nav-${view}`).classList.add('nav-active');
+            
+            const activeSec = document.getElementById(`sec-${view}`);
+            const activeNav = document.getElementById(`nav-${view}`);
+            if (activeSec) {
+                activeSec.classList.remove('hidden');
+                activeSec.classList.add('block');
+            }
+            if (activeNav) {
+                activeNav.classList.add('nav-active');
+            }
 
             if (view === 'dashboard') loadDashboard();
             if (view === 'reports') loadReports();
@@ -955,25 +1064,46 @@
         
         function setEntryMode(mode) {
             appState.entryMode = mode;
-            document.getElementById('btn-mode-single').className = mode === 'single' 
+            const singleBtn = document.getElementById('btn-mode-single');
+            const setBtn = document.getElementById('btn-mode-set');
+            
+            if(singleBtn) singleBtn.className = mode === 'single' 
                 ? "flex-1 md:flex-none px-4 py-1.5 text-sm font-semibold rounded-md bg-white shadow-sm text-blue-600 transition" 
                 : "flex-1 md:flex-none px-4 py-1.5 text-sm font-semibold rounded-md text-gray-500 hover:text-gray-700 transition";
-            document.getElementById('btn-mode-set').className = mode === 'set' 
+            if(setBtn) setBtn.className = mode === 'set' 
                 ? "flex-1 md:flex-none px-4 py-1.5 text-sm font-semibold rounded-md bg-white shadow-sm text-blue-600 transition" 
                 : "flex-1 md:flex-none px-4 py-1.5 text-sm font-semibold rounded-md text-gray-500 hover:text-gray-700 transition";
             
+            const actionSingle = document.getElementById('action-single');
+            const actionSet = document.getElementById('action-set');
+            
             if (mode === 'single') {
-                document.getElementById('action-single').classList.remove('hidden');
-                document.getElementById('action-set').classList.add('hidden');
-                document.getElementById('action-single').classList.add('flex');
-                document.getElementById('action-set').classList.remove('flex');
+                if(actionSingle) { actionSingle.classList.remove('hidden'); actionSingle.classList.add('flex'); }
+                if(actionSet) { actionSet.classList.add('hidden'); actionSet.classList.remove('flex'); }
             } else {
-                document.getElementById('action-single').classList.add('hidden');
-                document.getElementById('action-set').classList.remove('hidden');
-                document.getElementById('action-single').classList.remove('flex');
-                document.getElementById('action-set').classList.add('flex');
+                if(actionSingle) { actionSingle.classList.add('hidden'); actionSingle.classList.remove('flex'); }
+                if(actionSet) { actionSet.classList.remove('hidden'); actionSet.classList.add('flex'); }
                 updateSetProgress();
             }
+        }
+
+        function setJobType(val) {
+            appState.entryForm.jobType = val;
+            if (document.activeElement) document.activeElement.blur();
+            
+            ['new', 'repaint'].forEach(btn => {
+                const el = document.getElementById(`btn-job-${btn}`);
+                if (el) {
+                    el.classList.remove('bg-blue-600', 'text-white');
+                    el.classList.add('bg-gray-100', 'text-gray-500');
+                }
+            });
+            const activeEl = document.getElementById(`btn-job-${val.toLowerCase()}`);
+            if (activeEl) {
+                activeEl.classList.remove('bg-gray-100', 'text-gray-500');
+                activeEl.classList.add('bg-blue-600', 'text-white');
+            }
+            saveDraft();
         }
 
         function setJudgement(val) {
@@ -1001,26 +1131,32 @@
         }
 
         function loadPartMap() {
-            const part = document.getElementById('entry-part').value;
+            const partEl = document.getElementById('entry-part');
+            const part = partEl ? partEl.value : '';
             appState.entryForm.part = part;
             
             if (appState.entryMode === 'set' && appState.setDrafts[part]) {
                 const draft = appState.setDrafts[part];
-                document.getElementById('entry-sprayer').value = draft.sprayer || '';
-                document.getElementById('entry-color').value = draft.color || '';
-                document.getElementById('entry-location').value = draft.location || '';
-                document.getElementById('entry-remarks').value = draft.remarks || '';
+                if(document.getElementById('entry-sprayer')) document.getElementById('entry-sprayer').value = draft.sprayer || '';
+                if(document.getElementById('entry-color')) document.getElementById('entry-color').value = draft.color || '';
+                if(document.getElementById('entry-location')) document.getElementById('entry-location').value = draft.location || '';
+                if(document.getElementById('entry-remarks')) document.getElementById('entry-remarks').value = draft.remarks || '';
                 appState.entryForm.guValues = draft.guValues || {};
                 setJudgement(draft.judgement || '');
+                setJobType(draft.jobType || 'New');
             } else if (!appState.entryForm.guValues || Object.keys(appState.entryForm.guValues).length === 0) {
                  appState.entryForm.guValues = {};
                  setJudgement(''); 
+                 setJobType('New');
             }
 
-            document.getElementById('entry-img').src = getPartImage(part);
-            document.getElementById('entry-placeholder').classList.add('hidden');
-            document.getElementById('entry-map-area').classList.remove('hidden');
-            document.getElementById('entry-map-area').classList.add('flex');
+            const imgEl = document.getElementById('entry-img');
+            if(imgEl) imgEl.src = getPartImage(part);
+            
+            const pEl = document.getElementById('entry-placeholder');
+            const mEl = document.getElementById('entry-map-area');
+            if(pEl) pEl.classList.add('hidden');
+            if(mEl) { mEl.classList.remove('hidden'); mEl.classList.add('flex'); }
 
             renderEntryDots();
             saveDraft();
@@ -1028,6 +1164,7 @@
 
         function renderEntryDots() {
             const layer = document.getElementById('entry-dots-layer');
+            if(!layer) return;
             layer.innerHTML = '';
             
             const coords = appState.masterData.coordinates[appState.entryForm.part] || [];
@@ -1050,7 +1187,8 @@
                 layer.appendChild(dot);
             });
 
-            document.getElementById('entry-progress').innerText = `${completed}/${coords.length} Completed`;
+            const progEl = document.getElementById('entry-progress');
+            if(progEl) progEl.innerText = `${completed}/${coords.length} Completed`;
         }
 
         async function promptGUValue(pointId) {
@@ -1076,13 +1214,14 @@
 
         function saveDraft() {
             const draft = {
-                date: document.getElementById('entry-date').value,
-                part: document.getElementById('entry-part').value,
-                sprayer: document.getElementById('entry-sprayer').value,
-                color: document.getElementById('entry-color').value,
-                location: document.getElementById('entry-location').value,
-                remarks: document.getElementById('entry-remarks').value,
+                date: document.getElementById('entry-date')?.value || '',
+                part: document.getElementById('entry-part')?.value || '',
+                sprayer: document.getElementById('entry-sprayer')?.value || '',
+                color: document.getElementById('entry-color')?.value || '',
+                location: document.getElementById('entry-location')?.value || '',
+                remarks: document.getElementById('entry-remarks')?.value || '',
                 judgement: appState.entryForm.judgement,
+                jobType: appState.entryForm.jobType,
                 guValues: appState.entryForm.guValues
             };
             if (appState.entryMode === 'single') {
@@ -1097,14 +1236,16 @@
                     const draft = JSON.parse(draftStr);
                     if(draft.part) {
                         if(draft.date && window.fpEntry) window.fpEntry.setDate(draft.date, false, "d/m/y");
-                        document.getElementById('entry-part').value = draft.part;
-                        document.getElementById('entry-sprayer').value = draft.sprayer;
-                        document.getElementById('entry-color').value = draft.color;
-                        document.getElementById('entry-location').value = draft.location;
-                        document.getElementById('entry-remarks').value = draft.remarks;
+                        if(document.getElementById('entry-part')) document.getElementById('entry-part').value = draft.part;
+                        if(document.getElementById('entry-sprayer')) document.getElementById('entry-sprayer').value = draft.sprayer;
+                        if(document.getElementById('entry-color')) document.getElementById('entry-color').value = draft.color;
+                        if(document.getElementById('entry-location')) document.getElementById('entry-location').value = draft.location;
+                        if(document.getElementById('entry-remarks')) document.getElementById('entry-remarks').value = draft.remarks;
                         appState.entryForm.guValues = draft.guValues || {};
                         appState.entryForm.judgement = draft.judgement || '';
+                        appState.entryForm.jobType = draft.jobType || 'New';
                         setJudgement(draft.judgement || '');
+                        setJobType(draft.jobType || 'New');
                         loadPartMap();
                     }
                 } catch(e) { console.error("Draft parse error"); }
@@ -1116,22 +1257,23 @@
             if(window.fpEntry) window.fpEntry.setDate(new Date());
             appState.entryForm.guValues = {};
             setJudgement('');
-            document.getElementById('entry-part').value = '';
-            document.getElementById('entry-sprayer').value = '';
-            document.getElementById('entry-color').value = '';
-            document.getElementById('entry-location').value = '';
-            document.getElementById('entry-remarks').value = '';
-            document.getElementById('entry-placeholder').classList.remove('hidden');
-            document.getElementById('entry-map-area').classList.add('hidden');
+            setJobType('New');
+            if(document.getElementById('entry-part')) document.getElementById('entry-part').value = '';
+            if(document.getElementById('entry-sprayer')) document.getElementById('entry-sprayer').value = '';
+            if(document.getElementById('entry-color')) document.getElementById('entry-color').value = '';
+            if(document.getElementById('entry-location')) document.getElementById('entry-location').value = '';
+            if(document.getElementById('entry-remarks')) document.getElementById('entry-remarks').value = '';
+            if(document.getElementById('entry-placeholder')) document.getElementById('entry-placeholder').classList.remove('hidden');
+            if(document.getElementById('entry-map-area')) document.getElementById('entry-map-area').classList.add('hidden');
         }
 
         function validateEntryForm() {
             const missingFields = [];
-            if (!document.getElementById('entry-date').value) missingFields.push("Date");
-            if (!document.getElementById('entry-part').value) missingFields.push("Part");
-            if (!document.getElementById('entry-sprayer').value) missingFields.push("Sprayer");
-            if (!document.getElementById('entry-color').value) missingFields.push("Color");
-            if (!document.getElementById('entry-location').value) missingFields.push("Location");
+            if (!document.getElementById('entry-date')?.value) missingFields.push("Date");
+            if (!document.getElementById('entry-part')?.value) missingFields.push("Part");
+            if (!document.getElementById('entry-sprayer')?.value) missingFields.push("Sprayer");
+            if (!document.getElementById('entry-color')?.value) missingFields.push("Color");
+            if (!document.getElementById('entry-location')?.value) missingFields.push("Location");
             if (!appState.entryForm.judgement) missingFields.push("Judgement (OK/NG/TOK)");
 
             if (missingFields.length > 0) {
@@ -1158,6 +1300,7 @@
                 location: document.getElementById('entry-location').value,
                 remarks: document.getElementById('entry-remarks').value,
                 judgement: appState.entryForm.judgement,
+                jobType: appState.entryForm.jobType,
                 guValues: JSON.parse(JSON.stringify(appState.entryForm.guValues))
             };
             
@@ -1167,6 +1310,7 @@
         
         function updateSetProgress() {
             const container = document.getElementById('set-status-badges');
+            if(!container) return;
             container.innerHTML = '';
             let allCompleted = true;
             ['Front Cover', 'Middle Seat', 'Rear Cover'].forEach(p => {
@@ -1179,14 +1323,16 @@
             });
             
             const submitBtn = document.getElementById('btn-submit-set');
-            if (allCompleted) {
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                submitBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-            } else {
-                submitBtn.disabled = true;
-                submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                submitBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            if(submitBtn) {
+                if (allCompleted) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                    submitBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    submitBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                }
             }
         }
         
@@ -1200,6 +1346,7 @@
                     location: draft.location,
                     remarks: draft.remarks,
                     judgement: draft.judgement || 'OK',
+                    jobType: draft.jobType || 'New',
                     recordedBy: appState.currentUser.fullName,
                     guValues: draft.guValues
                 };
@@ -1244,6 +1391,7 @@
                 location: document.getElementById('entry-location').value,
                 remarks: document.getElementById('entry-remarks').value,
                 judgement: appState.entryForm.judgement,
+                jobType: appState.entryForm.jobType,
                 recordedBy: appState.currentUser.fullName,
                 guValues: appState.entryForm.guValues
             };
@@ -1273,20 +1421,16 @@
 
         function switchDashTab(tab) {
             ['overview', 'performance', 'engineering'].forEach(v => {
-                document.getElementById(`dash-content-${v}`).classList.add('hidden');
-                document.getElementById(`dash-content-${v}`).classList.remove('block');
-                
+                const el = document.getElementById(`dash-content-${v}`);
                 const btn = document.getElementById(`tab-dash-${v}`);
-                btn.classList.remove('border-blue-600', 'text-blue-600');
-                btn.classList.add('border-transparent', 'text-gray-500');
+                if(el) { el.classList.add('hidden'); el.classList.remove('block'); }
+                if(btn) { btn.classList.remove('border-blue-600', 'text-blue-600'); btn.classList.add('border-transparent', 'text-gray-500'); }
             });
             
-            document.getElementById(`dash-content-${tab}`).classList.remove('hidden');
-            document.getElementById(`dash-content-${tab}`).classList.add('block');
-            
+            const activeEl = document.getElementById(`dash-content-${tab}`);
             const activeBtn = document.getElementById(`tab-dash-${tab}`);
-            activeBtn.classList.add('border-blue-600', 'text-blue-600');
-            activeBtn.classList.remove('border-transparent', 'text-gray-500');
+            if(activeEl) { activeEl.classList.remove('hidden'); activeEl.classList.add('block'); }
+            if(activeBtn) { activeBtn.classList.add('border-blue-600', 'text-blue-600'); activeBtn.classList.remove('border-transparent', 'text-gray-500'); }
         }
 
         async function loadDashboard() {
@@ -1301,8 +1445,9 @@
         }
 
         function applyDashboardFilters() {
-            const selectedPart = document.getElementById('dash-filter-part').value;
-            const selectedColor = document.getElementById('dash-filter-color').value;
+            const selectedPart = document.getElementById('dash-filter-part')?.value || 'ALL';
+            const selectedColor = document.getElementById('dash-filter-color')?.value || 'ALL';
+            const selectedJobType = document.getElementById('dash-filter-jobtype')?.value || 'ALL';
             
             const sprayerEls = document.querySelectorAll('#dash-options-sprayer input[type="checkbox"]:checked');
             const selectedSprayers = Array.from(sprayerEls).map(cb => cb.value);
@@ -1310,13 +1455,22 @@
             const locEls = document.querySelectorAll('#dash-options-location input[type="checkbox"]:checked');
             const selectedLocations = Array.from(locEls).map(cb => cb.value);
             
-            const selectedDates = window.fpDash.selectedDates;
+            const selectedDates = window.fpDash ? window.fpDash.selectedDates : null;
             
             let filteredData = appState.dashData.filter(row => {
                 if (selectedPart !== 'ALL' && row.part !== selectedPart) return false;
                 if (selectedColor !== 'ALL' && row.color !== selectedColor) return false;
-                if (selectedSprayers.length === 0 || !selectedSprayers.includes(row.sprayer)) return false;
-                if (selectedLocations.length === 0 || !selectedLocations.includes(row.location)) return false;
+                
+                if (selectedJobType !== 'ALL') {
+                    if (selectedJobType === 'Unknown') {
+                        if (row.jobType && row.jobType.trim() !== '') return false;
+                    } else {
+                        if (row.jobType !== selectedJobType) return false;
+                    }
+                }
+                
+                if (selectedSprayers.length > 0 && !selectedSprayers.includes(row.sprayer)) return false;
+                if (selectedLocations.length > 0 && !selectedLocations.includes(row.location)) return false;
                 
                 if (selectedDates && selectedDates.length > 0) {
                     let rowDate = parseDateStandard(row.date);
@@ -1335,6 +1489,7 @@
 
         function toggleChartEmptyState(chartId, isEmpty) {
             const canvas = document.getElementById(chartId);
+            if(!canvas) return;
             const container = canvas.parentElement;
             let overlay = container.querySelector('.no-data-overlay');
 
@@ -1342,7 +1497,7 @@
                 if (!overlay) {
                     overlay = document.createElement('div');
                     overlay.className = 'no-data-overlay absolute inset-0 flex items-center justify-center z-10 text-gray-400 font-bold bg-white';
-                    overlay.innerHTML = '<div class="text-center"><i class="fa-solid fa-chart-bar text-3xl mb-2 opacity-50"></i><p>No Data Found for selected filters</p></div>';
+                    overlay.innerHTML = '<div class="text-center"><i class="fa-solid fa-chart-bar text-3xl mb-2 opacity-50"></i><p>No Data Found</p></div>';
                     container.appendChild(overlay);
                 }
                 overlay.classList.remove('hidden');
@@ -1359,11 +1514,15 @@
             let trendData = {};
             let sprayerStats = {};
             let pointStats = {}; 
+            let repaintCount = 0;
+            let yieldByPart = {};
 
             data.forEach(row => {
                 if(row.judgement === 'OK') ok++; 
                 else if (row.judgement === 'NG') ng++;
                 else if (row.judgement === 'TOK') tok++;
+                
+                if((row.jobType || 'New') === 'Repaint') repaintCount++;
                 
                 if(row.judgement === 'NG' && row.remarks) {
                     let r = row.remarks.trim();
@@ -1372,8 +1531,11 @@
 
                 if (!sprayerStats[row.sprayer]) sprayerStats[row.sprayer] = { OK: 0, NG: 0, TOK: 0 };
                 sprayerStats[row.sprayer][row.judgement] = (sprayerStats[row.sprayer][row.judgement] || 0) + 1;
+                
+                if (!yieldByPart[row.part]) yieldByPart[row.part] = { OK: 0, NG: 0, TOK: 0 };
+                yieldByPart[row.part][row.judgement] = (yieldByPart[row.part][row.judgement] || 0) + 1;
 
-                let vals = Object.values(row.guValues).filter(v => typeof v === 'number');
+                let vals = Object.values(row.guValues || {}).filter(v => typeof v === 'number');
                 if(vals.length > 0) {
                     let avg = vals.reduce((a,b)=>a+b,0) / vals.length;
                     let dateParsed = parseDateStandard(row.date);
@@ -1384,27 +1546,31 @@
                     trendData[dateStr].count++;
                 }
 
-                Object.keys(row.guValues).forEach(pointId => {
-                    let val = Number(row.guValues[pointId]);
-                    if (!isNaN(val)) {
-                        if (!pointStats[pointId]) pointStats[pointId] = { sum: 0, count: 0 };
-                        pointStats[pointId].sum += val;
-                        pointStats[pointId].count++;
-                    }
-                });
+                if(row.guValues) {
+                    Object.keys(row.guValues).forEach(pointId => {
+                        let val = Number(row.guValues[pointId]);
+                        if (!isNaN(val)) {
+                            if (!pointStats[pointId]) pointStats[pointId] = { sum: 0, count: 0 };
+                            pointStats[pointId].sum += val;
+                            pointStats[pointId].count++;
+                        }
+                    });
+                }
             });
 
             const total = ok + ng + tok;
-            document.getElementById('kpi-total').innerText = total;
-            document.getElementById('kpi-yield').innerText = total > 0 ? Math.round((ok/total)*100) + '%' : '0%';
-            document.getElementById('kpi-ng').innerText = ng;
+            if(document.getElementById('kpi-total')) document.getElementById('kpi-total').innerText = total;
+            if(document.getElementById('kpi-yield')) document.getElementById('kpi-yield').innerText = total > 0 ? Math.round((ok/total)*100) + '%' : '0%';
+            if(document.getElementById('kpi-ng')) document.getElementById('kpi-ng').innerText = ng;
+            if(document.getElementById('kpi-repaint')) document.getElementById('kpi-repaint').innerText = total > 0 ? Math.round((repaintCount/total)*100) + '%' : '0%';
             
             const sortedDefects = Object.entries(defectReasons).sort((a,b)=>b[1]-a[1]);
-            document.getElementById('kpi-defect').innerText = sortedDefects.length > 0 ? sortedDefects[0][0] : '-';
+            if(document.getElementById('kpi-defect')) document.getElementById('kpi-defect').innerText = sortedDefects.length > 0 ? sortedDefects[0][0] : '-';
 
             renderChartJudgement(ok, ng, tok);
             renderChartPareto(defectReasons);
             renderChartSprayer(sprayerStats);
+            renderChartYieldPart(yieldByPart);
             renderChartTrend(trendData);
             renderChartVariance(pointStats);
         }
@@ -1415,8 +1581,9 @@
             if(appState.charts.pie) appState.charts.pie.destroy();
             if(total === 0) return;
 
-            const ctx = document.getElementById('chart-pie-judgement').getContext('2d');
-            appState.charts.pie = new Chart(ctx, {
+            const ctx = document.getElementById('chart-pie-judgement');
+            if(!ctx) return;
+            appState.charts.pie = new Chart(ctx.getContext('2d'), {
                 type: 'doughnut',
                 data: {
                     labels: ['OK', 'NG', 'TOK'],
@@ -1432,10 +1599,11 @@
             if(appState.charts.pareto) appState.charts.pareto.destroy();
             if(keys.length === 0) return;
 
-            const ctx = document.getElementById('chart-bar-pareto').getContext('2d');
+            const ctx = document.getElementById('chart-bar-pareto');
+            if(!ctx) return;
             const sorted = Object.entries(reasons).sort((a,b)=>b[1]-a[1]).slice(0, 10); 
             
-            appState.charts.pareto = new Chart(ctx, {
+            appState.charts.pareto = new Chart(ctx.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: sorted.map(i => i[0]),
@@ -1451,12 +1619,13 @@
             if(appState.charts.sprayer) appState.charts.sprayer.destroy();
             if(sprayers.length === 0) return;
 
-            const ctx = document.getElementById('chart-bar-sprayer').getContext('2d');
+            const ctx = document.getElementById('chart-bar-sprayer');
+            if(!ctx) return;
             const dataOK = sprayers.map(s => stats[s].OK || 0);
             const dataNG = sprayers.map(s => stats[s].NG || 0);
             const dataTOK = sprayers.map(s => stats[s].TOK || 0);
 
-            appState.charts.sprayer = new Chart(ctx, {
+            appState.charts.sprayer = new Chart(ctx.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: sprayers,
@@ -1472,6 +1641,35 @@
                 }
             });
         }
+        
+        function renderChartYieldPart(stats) {
+            const parts = Object.keys(stats);
+            toggleChartEmptyState('chart-bar-yield-part', parts.length === 0);
+            if(appState.charts.yieldPart) appState.charts.yieldPart.destroy();
+            if(parts.length === 0) return;
+
+            const ctx = document.getElementById('chart-bar-yield-part');
+            if(!ctx) return;
+            const dataOK = parts.map(p => stats[p].OK || 0);
+            const dataNG = parts.map(p => stats[p].NG || 0);
+            const dataTOK = parts.map(p => stats[p].TOK || 0);
+
+            appState.charts.yieldPart = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: parts,
+                    datasets: [
+                        { label: 'NG', data: dataNG, backgroundColor: '#ef4444' },
+                        { label: 'TOK', data: dataTOK, backgroundColor: '#eab308' },
+                        { label: 'OK', data: dataOK, backgroundColor: '#22c55e' }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { x: { stacked: false }, y: { beginAtZero: true } }
+                }
+            });
+        }
 
         function renderChartTrend(trendData) {
             const keys = Object.keys(trendData);
@@ -1479,12 +1677,13 @@
             if(appState.charts.trend) appState.charts.trend.destroy();
             if(keys.length === 0) return;
 
-            const ctx = document.getElementById('chart-line-trend').getContext('2d');
+            const ctx = document.getElementById('chart-line-trend');
+            if(!ctx) return;
             const sortedEntries = Object.values(trendData).sort((a,b) => a.rawDate - b.rawDate);
             const labels = sortedEntries.map(e => flatpickr.formatDate(e.rawDate, "d/m"));
             const averages = sortedEntries.map(e => (e.sum / e.count).toFixed(1));
 
-            appState.charts.trend = new Chart(ctx, {
+            appState.charts.trend = new Chart(ctx.getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: labels,
@@ -1502,8 +1701,8 @@
             if(appState.charts.variance) appState.charts.variance.destroy();
             if(keys.length === 0) return;
 
-            const ctx = document.getElementById('chart-bar-variance').getContext('2d');
-            
+            const ctx = document.getElementById('chart-bar-variance');
+            if(!ctx) return;
             const sortedPoints = keys.sort((a, b) => {
                 let numA = parseInt(a.replace(/\D/g, '')) || 0;
                 let numB = parseInt(b.replace(/\D/g, '')) || 0;
@@ -1513,7 +1712,7 @@
             const labels = sortedPoints;
             const averages = sortedPoints.map(p => (pointStats[p].sum / pointStats[p].count).toFixed(1));
 
-            appState.charts.variance = new Chart(ctx, {
+            appState.charts.variance = new Chart(ctx.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: labels,
@@ -1535,6 +1734,7 @@
         // ==========================================
         // REPORTS MODULE
         // ==========================================
+        
         if (!window.dateRangeFilterSetup) {
             window.dateRangeFilter = function(settings, data, dataIndex) {
                 if (!window.dtDateRange || window.dtDateRange.length === 0) return true;
@@ -1562,72 +1762,83 @@
                 const rawData = await API.run('getReportData');
                 appState.currentReports = rawData;
 
-                if (dataTableInstance) dataTableInstance.destroy();
-                
-                const tbody = document.getElementById('reportsBody');
-                tbody.innerHTML = '';
+                if (dataTableInstance) {
+                    dataTableInstance.destroy();
+                    $('#reportsTable tbody').empty();
+                }
 
-                rawData.forEach((row, index) => {
-                    let vals = Object.values(row.guValues).filter(v => typeof v === 'number');
-                    let avg = vals.length > 0 ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : '-';
-                    
-                    let tsStr = '-';
-                    if (row.timestamp) {
-                        let d = new Date(row.timestamp);
-                        if (!isNaN(d)) {
-                            tsStr = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear().toString().slice(-2) + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-                        }
-                    }
-                    
-                    let dateStr = '-';
-                    if (row.date) {
-                        if (row.date.includes('-') || row.date.includes('T')) {
-                            let d = new Date(row.date);
-                            if (!isNaN(d)) dateStr = flatpickr.formatDate(d, "d/m/y");
-                            else dateStr = row.date;
-                        } else {
-                            dateStr = row.date; 
-                        }
-                    }
-                    
-                    let actionHtml = `
-                        <button onclick='viewReportDetails(${index})' class="bg-blue-100 text-blue-600 p-1.5 rounded hover:bg-blue-200 shadow-sm" title="View Map">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                    `;
-                    if (appState.currentUser && appState.currentUser.role === 'Admin') {
-                        actionHtml += `
-                        <button onclick='openEditModal(${index})' class="bg-yellow-100 text-yellow-700 p-1.5 rounded hover:bg-yellow-200 ml-1.5 shadow-sm" title="Edit Entry">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
-                        `;
-                    }
-
-                    let tr = document.createElement('tr');
-                    tr.className = 'border-b hover:bg-gray-50';
-                    tr.innerHTML = `
-                        <td class="px-4 py-3">${tsStr}</td>
-                        <td class="px-4 py-3">${dateStr}</td>
-                        <td class="px-4 py-3 font-medium">${row.part}</td>
-                        <td class="px-4 py-3">${row.sprayer}</td>
-                        <td class="px-4 py-3">${row.color}</td>
-                        <td class="px-4 py-3">${row.location}</td>
-                        <td class="px-4 py-3">${avg}</td>
-                        <td class="px-4 py-3 font-bold ${row.judgement==='OK'?'text-green-600':(row.judgement==='TOK'?'text-yellow-500':'text-red-600')}">${row.judgement}</td>
-                        <td class="px-4 py-3">${row.remarks || '-'}</td>
-                        <td class="px-4 py-3">${row.recordedBy || '-'}</td>
-                        <td class="px-4 py-3 whitespace-nowrap">${actionHtml}</td>
-                    `;
-                    tbody.appendChild(tr);
+                let dataForTable = rawData.map((row, index) => {
+                    let r = {...row, __originalIndex: index};
+                    let vals = Object.values(r.guValues || {}).filter(v => typeof v === 'number');
+                    r.avgGu = vals.length > 0 ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : '-';
+                    return r;
                 });
 
                 dataTableInstance = $('#reportsTable').DataTable({
+                    data: dataForTable,
                     pageLength: 10,
                     order: [[0, 'desc']], 
                     dom: '<"flex justify-between items-center mb-4"lf>rt<"flex justify-between items-center mt-4"ip>',
+                    columns: [
+                        { 
+                            data: 'timestamp',
+                            defaultContent: '-',
+                            render: function(data) {
+                                if (!data || data === '-') return '-';
+                                let d = new Date(data);
+                                if (isNaN(d)) return data;
+                                return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear().toString().slice(-2) + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+                            }
+                        },
+                        { 
+                            data: 'date',
+                            defaultContent: '-',
+                            render: function(data) {
+                                if (!data || data === '-') return '-';
+                                if (typeof data === 'string' && (data.includes('-') || data.includes('T'))) {
+                                    let d = new Date(data);
+                                    if (!isNaN(d)) return flatpickr.formatDate(d, "d/m/y");
+                                }
+                                return data;
+                            }
+                        },
+                        { data: 'part', defaultContent: '-' },
+                        { data: 'sprayer', defaultContent: '-' },
+                        { data: 'color', defaultContent: '-' },
+                        { data: 'location', defaultContent: '-' },
+                        { data: 'avgGu', defaultContent: '-' },
+                        { 
+                            data: 'judgement',
+                            defaultContent: '-',
+                            render: function(data, type) {
+                                if (type === 'display') {
+                                    let colorClass = data === 'OK' ? 'text-green-600' : (data === 'TOK' ? 'text-yellow-500' : 'text-red-600');
+                                    return `<span class="font-bold ${colorClass}">${data}</span>`;
+                                }
+                                return data; 
+                            }
+                        },
+                        { data: 'jobType', defaultContent: 'New', render: function(data) { return data || 'New'; } },
+                        { data: 'remarks', defaultContent: '-', render: function(data) { return data || '-'; } },
+                        { data: 'recordedBy', defaultContent: '-', render: function(data) { return data || '-'; } },
+                        { 
+                            data: null,
+                            orderable: false,
+                            render: function(data, type, row) {
+                                let idx = row.__originalIndex;
+                                let actionHtml = `<button onclick='viewReportDetails(${idx})' class="bg-blue-100 text-blue-600 p-1.5 rounded hover:bg-blue-200 shadow-sm" title="View Map"><i class="fa-solid fa-eye"></i></button>`;
+                                if (appState.currentUser && appState.currentUser.role === 'Admin') {
+                                    actionHtml += `<button onclick='openEditModal(${idx})' class="bg-yellow-100 text-yellow-700 p-1.5 rounded hover:bg-yellow-200 ml-1.5 shadow-sm" title="Edit Entry"><i class="fa-solid fa-pen"></i></button>`;
+                                }
+                                return `<div class="whitespace-nowrap">${actionHtml}</div>`;
+                            }
+                        }
+                    ],
                     initComplete: function () {
-                        const filterableColumns = ['Part', 'Sprayer', 'Color', 'Location', 'Judgement', 'Remarks', 'Recorded By'];
-                        
+                        const filterableColumns = ['Part', 'Sprayer', 'Color', 'Location', 'Judgement', 'Job Type', 'Remarks', 'Recorded By'];
+                        const thead = $(this.api().table().header());
+                        thead.find('.filter-icon, .dt-filter-dropdown, input').remove();
+
                         this.api().columns().every(function () {
                             let column = this;
                             let th = $(column.header());
@@ -1650,7 +1861,7 @@
 
                                 let uniqueVals = [];
                                 column.data().each(function (d) {
-                                    let val = $('<div>').html(d).text().trim();
+                                    let val = $('<div>').html(d || '').text().trim();
                                     if (val && !uniqueVals.includes(val)) {
                                         uniqueVals.push(val);
                                     }
@@ -1741,11 +1952,11 @@
 
                 Swal.close();
             } catch(e) {
-                Swal.fire('Error', 'Failed to load reports.', 'error');
+                console.error("Load Reports Error:", e);
+                Swal.fire('Error', e.message || 'Failed to load reports. Check console.', 'error');
             }
         }
 
-        // ADMIN EDIT MODAL WITH VISUAL REFERENCE
         function openEditModal(index) {
             const rowObj = appState.currentReports[index];
             if(!rowObj) return;
@@ -1754,6 +1965,9 @@
             const colorOpts = appState.masterData.colors.map(c => `<option value="${c}" ${c === rowObj.color ? 'selected' : ''}>${c}</option>`).join('');
             const locOpts = appState.masterData.locations.map(l => `<option value="${l}" ${l === rowObj.location ? 'selected' : ''}>${l}</option>`).join('');
             const judgeOpts = ['OK', 'NG', 'TOK'].map(j => `<option value="${j}" ${j === rowObj.judgement ? 'selected' : ''}>${j}</option>`).join('');
+            
+            const currentJobType = rowObj.jobType || 'New';
+            const jobTypeOpts = ['New', 'Repaint'].map(j => `<option value="${j}" ${j === currentJobType ? 'selected' : ''}>${j}</option>`).join('');
 
             const coords = appState.masterData.coordinates[rowObj.part] || [];
             let guInputsHtml = '';
@@ -1823,13 +2037,19 @@
                                 <select id="edit-location" class="w-full border border-gray-300 focus:border-blue-500 rounded p-2 bg-white">${locOpts}</select>
                             </div>
                             <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Job Type</label>
+                                <select id="edit-jobtype" class="w-full border border-gray-300 focus:border-blue-500 rounded p-2 bg-white">${jobTypeOpts}</select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Judgement</label>
                                 <select id="edit-judgement" class="w-full border border-gray-300 focus:border-blue-500 rounded p-2 bg-white">${judgeOpts}</select>
                             </div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Remarks</label>
-                            <input type="text" id="edit-remarks" class="w-full border border-gray-300 focus:border-blue-500 rounded p-2" value="${rowObj.remarks || ''}">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Remarks</label>
+                                <input type="text" id="edit-remarks" class="w-full border border-gray-300 focus:border-blue-500 rounded p-2" value="${rowObj.remarks || ''}">
+                            </div>
                         </div>
                         ${guInputsHtml}
                     </div>
@@ -1857,6 +2077,7 @@
                         sprayer: document.getElementById('edit-sprayer').value,
                         color: document.getElementById('edit-color').value,
                         location: document.getElementById('edit-location').value,
+                        jobType: document.getElementById('edit-jobtype').value,
                         judgement: document.getElementById('edit-judgement').value,
                         remarks: document.getElementById('edit-remarks').value,
                         guValues: guValues
@@ -1921,7 +2142,7 @@
         }
 
         // ==========================================
-        // 8. ADMIN MODULE (MAPS, GU, USER CRUD)
+        // ADMIN MODULE
         // ==========================================
         function switchAdminTab(tab) {
             ['map', 'gu', 'data', 'users'].forEach(t => {
@@ -2133,14 +2354,16 @@
             }
         }
 
-        // --- USER MANAGEMENT CRUD ---
         async function loadUsers() {
             Swal.fire({ title: 'Loading Users...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
                 const users = await API.run('getUsers');
                 appState.usersData = users; 
                 
-                if (usersTableInstance) usersTableInstance.destroy();
+                if (usersTableInstance) {
+                    usersTableInstance.destroy();
+                    $('#users-table tbody').empty();
+                }
                 
                 const tbody = document.getElementById('users-tbody');
                 tbody.innerHTML = '';
