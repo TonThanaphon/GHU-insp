@@ -863,12 +863,10 @@
         };
 
         function handleLogout(isIdle = false) {
-            // 1. Explicitly clear local session and timers
             appState.currentUser = null;
             localStorage.removeItem('ghl_user');
             clearTimeout(idleTimer);
             
-            // 2. Hide navigation and main content wrappers to prevent background bleed
             const navBar = document.querySelector('nav');
             if (navBar) navBar.classList.add('hidden');
             
@@ -880,16 +878,13 @@
                 if (el) el.classList.add('hidden');
             });
             
-            // 3. Reveal a clean login screen
             const loginOverlay = document.getElementById('login-overlay');
             if (loginOverlay) loginOverlay.classList.remove('hidden');
             
             const loginForm = document.getElementById('login-form');
             if (loginForm) loginForm.reset();
 
-            // 4. Reload page to absolutely guarantee clean DOM and memory state
             if (isIdle) {
-                // Wait for the user to acknowledge the idle warning before reloading
                 Swal.fire({
                     title: 'Session Expired', 
                     text: 'You have been logged out due to inactivity.', 
@@ -1818,11 +1813,58 @@
             });
         }
 
+        // Helper to update column filters dynamically without breaking state or DOM
+        function updateFilterDropdowns(apiInstance) {
+            const filterableColumns = ['Part', 'Sprayer', 'Color', 'Location', 'Judgement', 'Job Type', 'Remarks', 'Recorded By'];
+            apiInstance.columns().every(function () {
+                let column = this;
+                let th = $(column.header());
+                let title = th.text().trim();
+                if (filterableColumns.includes(title)) {
+                    let dropdown = th.find('.dt-filter-dropdown');
+                    if (dropdown.length > 0) {
+                        // Gather currently checked checkmarks to maintain user selections
+                        let checkedItems = [];
+                        dropdown.find('input[type="checkbox"]:checked').each(function() {
+                            checkedItems.push($(this).val());
+                        });
+
+                        // Recalculate unique values
+                        let uniqueVals = [];
+                        column.data().each(function (d) {
+                            let val = $('<div>').html(d || '').text().trim();
+                            if (val && !uniqueVals.includes(val)) {
+                                uniqueVals.push(val);
+                            }
+                        });
+                        uniqueVals.sort();
+
+                        // Rebuild options HTML with checked states preserved
+                        let optionsHtml = '';
+                        uniqueVals.forEach(function (val) {
+                            let isChecked = checkedItems.includes(val) ? 'checked' : '';
+                            optionsHtml += `
+                                <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                                    <input type="checkbox" value="${val}" ${isChecked} class="form-checkbox h-3.5 w-3.5 text-blue-600 rounded border-gray-300">
+                                    <span class="truncate">${val}</span>
+                                </label>
+                            `;
+                        });
+                        dropdown.find('.filter-options').html(optionsHtml);
+                    }
+                }
+            });
+        }
+
         async function loadReports() {
+            // 1. Save scroll position prior to data loading
+            const currentScroll = window.scrollY;
+
             Swal.fire({ title: 'Loading Reports...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
                 let rawData = await API.run('getReportData');
                 
+                // Helper to parse date/timestamp into sortable Unix timestamp number
                 function getSortableTime(dateStr) {
                     if (!dateStr || dateStr === '-') return 0;
                     try {
@@ -1846,6 +1888,7 @@
                     }
                 }
 
+                // Presort raw array chronologically descending (newest first)
                 rawData.sort((a, b) => {
                     const timeA = getSortableTime(a.timestamp || a.date);
                     const timeB = getSortableTime(b.timestamp || b.date);
@@ -1854,11 +1897,6 @@
 
                 appState.currentReports = rawData;
 
-                if (dataTableInstance) {
-                    dataTableInstance.destroy();
-                    $('#reportsTable tbody').empty();
-                }
-
                 let dataForTable = rawData.map((row, index) => {
                     let r = {...row, __originalIndex: index};
                     let vals = Object.values(r.guValues || {}).filter(v => typeof v === 'number');
@@ -1866,183 +1904,200 @@
                     return r;
                 });
 
-                dataTableInstance = $('#reportsTable').DataTable({
-                    data: dataForTable,
-                    pageLength: 10,
-                    stateSave: true,
-                    order: [], 
-                    dom: '<"flex justify-between items-center mb-4"lf>rt<"flex justify-between items-center mt-4"ip>',
-                    columns: [
-                        { 
-                            data: 'timestamp',
-                            defaultContent: '-',
-                            render: function(data, type, row) {
-                                if (type === 'sort') {
-                                    return getSortableTime(data || row.date);
-                                }
-                                return data || '-';
-                            }
+                // SMART TABLE RELOAD: Prevent dataTable destroy and DOM jump
+                if (dataTableInstance) {
+                    dataTableInstance.clear().rows.add(dataForTable).draw(false);
+                    updateFilterDropdowns(dataTableInstance);
+                } else {
+                    dataTableInstance = $('#reportsTable').DataTable({
+                        data: dataForTable,
+                        pageLength: 10,
+                        stateSave: true,
+                        order: [], // Instruct DataTables not to apply initial sorting
+                        dom: '<"flex justify-between items-center mb-4"lf>rt<"flex justify-between items-center mt-4"ip>',
+                        language: {
+                            search: "",
+                            searchPlaceholder: "Search reports...",
+                            lengthMenu: "Show _MENU_" // UI Cleanup: Removes the word "entries"
                         },
-                        { 
-                            data: 'date',
-                            defaultContent: '-',
-                            render: function(data, type, row) {
-                                if (type === 'sort') {
-                                    return getSortableTime(data || row.timestamp);
+                        columns: [
+                            { 
+                                data: 'timestamp',
+                                defaultContent: '-',
+                                render: function(data, type, row) {
+                                    if (type === 'sort') {
+                                        return getSortableTime(data || row.date);
+                                    }
+                                    return data || '-';
                                 }
-                                return data || '-';
-                            }
-                        },
-                        { data: 'part', defaultContent: '-' },
-                        { data: 'sprayer', defaultContent: '-' },
-                        { data: 'color', defaultContent: '-' },
-                        { data: 'location', defaultContent: '-' },
-                        { data: 'avgGu', defaultContent: '-' },
-                        { 
-                            data: 'judgement',
-                            defaultContent: '-',
-                            render: function(data, type) {
-                                if (type === 'display') {
-                                    let colorClass = data === 'OK' ? 'text-green-600' : (data === 'TOK' ? 'text-yellow-500' : 'text-red-600');
-                                    return `<span class="font-bold ${colorClass}">${data}</span>`;
+                            },
+                            { 
+                                data: 'date',
+                                defaultContent: '-',
+                                render: function(data, type, row) {
+                                    if (type === 'sort') {
+                                        return getSortableTime(data || row.timestamp);
+                                    }
+                                    return data || '-';
                                 }
-                                return data; 
-                            }
-                        },
-                        { data: 'jobType', defaultContent: 'New', render: function(data) { return data || 'New'; } },
-                        { data: 'remarks', defaultContent: '-', render: function(data) { return data || '-'; } },
-                        { data: 'recordedBy', defaultContent: '-', render: function(data) { return data || '-'; } },
-                        { 
-                            data: null,
-                            orderable: false,
-                            render: function(data, type, row) {
-                                let idx = row.__originalIndex;
-                                let actionHtml = `<button onclick='viewReportDetails(${idx})' class="bg-blue-100 text-blue-600 p-1.5 rounded hover:bg-blue-200 shadow-sm" title="View Map"><i class="fa-solid fa-eye"></i></button>`;
-                                if (appState.currentUser && appState.currentUser.role === 'Admin') {
-                                    actionHtml += `<button onclick='openEditModal(${idx})' class="bg-yellow-100 text-yellow-700 p-1.5 rounded hover:bg-yellow-200 ml-1.5 shadow-sm" title="Edit Entry"><i class="fa-solid fa-pen"></i></button>`;
-                                    actionHtml += `<button onclick='deleteReportEntry("${row.timestamp}", "${row.part}")' class="bg-red-100 text-red-600 p-1.5 rounded hover:bg-red-200 ml-1.5 shadow-sm" title="Delete Entry"><i class="fa-solid fa-trash"></i></button>`;
+                            },
+                            { data: 'part', defaultContent: '-' },
+                            { data: 'sprayer', defaultContent: '-' },
+                            { data: 'color', defaultContent: '-' },
+                            { data: 'location', defaultContent: '-' },
+                            { data: 'avgGu', defaultContent: '-' },
+                            { 
+                                data: 'judgement',
+                                defaultContent: '-',
+                                render: function(data, type) {
+                                    if (type === 'display') {
+                                        let colorClass = data === 'OK' ? 'text-green-600' : (data === 'TOK' ? 'text-yellow-500' : 'text-red-600');
+                                        return `<span class="font-bold ${colorClass}">${data}</span>`;
+                                    }
+                                    return data; 
                                 }
-                                return `<div class="whitespace-nowrap">${actionHtml}</div>`;
+                            },
+                            { data: 'jobType', defaultContent: 'New', render: function(data) { return data || 'New'; } },
+                            { data: 'remarks', defaultContent: '-', render: function(data) { return data || '-'; } },
+                            { data: 'recordedBy', defaultContent: '-', render: function(data) { return data || '-'; } },
+                            { 
+                                data: null,
+                                orderable: false,
+                                render: function(data, type, row) {
+                                    let idx = row.__originalIndex;
+                                    let actionHtml = `<button onclick='viewReportDetails(${idx})' class="bg-blue-100 text-blue-600 p-1.5 rounded hover:bg-blue-200 shadow-sm" title="View Map"><i class="fa-solid fa-eye"></i></button>`;
+                                    if (appState.currentUser && appState.currentUser.role === 'Admin') {
+                                        actionHtml += `<button onclick='openEditModal(${idx})' class="bg-yellow-100 text-yellow-700 p-1.5 rounded hover:bg-yellow-200 ml-1.5 shadow-sm" title="Edit Entry"><i class="fa-solid fa-pen"></i></button>`;
+                                        actionHtml += `<button onclick='deleteReportEntry("${row.timestamp}", "${row.part}")' class="bg-red-100 text-red-600 p-1.5 rounded hover:bg-red-200 ml-1.5 shadow-sm" title="Delete Entry"><i class="fa-solid fa-trash"></i></button>`;
+                                    }
+                                    return `<div class="whitespace-nowrap">${actionHtml}</div>`;
+                                }
                             }
-                        }
-                    ],
-                    initComplete: function () {
-                        const filterableColumns = ['Part', 'Sprayer', 'Color', 'Location', 'Judgement', 'Job Type', 'Remarks', 'Recorded By'];
-                        const thead = $(this.api().table().header());
-                        thead.find('.filter-icon, .dt-filter-dropdown, input').remove();
+                        ],
+                        initComplete: function () {
+                            const filterableColumns = ['Part', 'Sprayer', 'Color', 'Location', 'Judgement', 'Job Type', 'Remarks', 'Recorded By'];
+                            const thead = $(this.api().table().header());
+                            thead.find('.filter-icon, .dt-filter-dropdown, input').remove();
 
-                        this.api().columns().every(function () {
-                            let column = this;
-                            let th = $(column.header());
-                            let title = th.text().trim();
+                            this.api().columns().every(function () {
+                                let column = this;
+                                let th = $(column.header());
+                                let title = th.text().trim();
 
-                            if (filterableColumns.includes(title)) {
-                                th.addClass('relative');
-                                let icon = $('<i class="fas fa-filter ml-2 text-gray-300 hover:text-gray-500 cursor-pointer transition-colors filter-icon" title="Filter"></i>');
-                                th.append(icon);
+                                if (filterableColumns.includes(title)) {
+                                    th.addClass('relative');
+                                    let icon = $('<i class="fas fa-filter ml-2 text-gray-300 hover:text-gray-500 cursor-pointer transition-colors filter-icon" title="Filter"></i>');
+                                    th.append(icon);
 
-                                let dropdown = $(`
-                                    <div class="dt-filter-dropdown hidden absolute left-0 top-full mt-2 z-50 bg-white border border-gray-200 shadow-xl rounded-md w-48 text-sm font-normal text-left text-gray-700 font-sans cursor-default">
-                                        <div class="max-h-48 overflow-y-auto p-3 space-y-2 filter-options"></div>
-                                        <div class="border-t border-gray-200 p-2 flex justify-between bg-gray-50 rounded-b-md">
-                                            <button class="text-xs font-semibold text-gray-500 hover:text-gray-800 clear-filter px-2 py-1">Clear</button>
-                                            <button class="text-xs font-semibold bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 apply-filter">Apply</button>
+                                    let dropdown = $(`
+                                        <div class="dt-filter-dropdown hidden absolute left-0 top-full mt-2 z-50 bg-white border border-gray-200 shadow-xl rounded-md w-48 text-sm font-normal text-left text-gray-700 font-sans cursor-default">
+                                            <div class="max-h-48 overflow-y-auto p-3 space-y-2 filter-options"></div>
+                                            <div class="border-t border-gray-200 p-2 flex justify-between bg-gray-50 rounded-b-md">
+                                                <button class="text-xs font-semibold text-gray-500 hover:text-gray-800 clear-filter px-2 py-1">Clear</button>
+                                                <button class="text-xs font-semibold bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 apply-filter">Apply</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                `);
+                                    `);
 
-                                let uniqueVals = [];
-                                column.data().each(function (d) {
-                                    let val = $('<div>').html(d || '').text().trim();
-                                    if (val && !uniqueVals.includes(val)) {
-                                        uniqueVals.push(val);
-                                    }
-                                });
-                                uniqueVals.sort();
-
-                                let optionsHtml = '';
-                                uniqueVals.forEach(function (val) {
-                                    optionsHtml += `
-                                        <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
-                                            <input type="checkbox" value="${val}" class="form-checkbox h-3.5 w-3.5 text-blue-600 rounded border-gray-300">
-                                            <span class="truncate">${val}</span>
-                                        </label>
-                                    `;
-                                });
-                                
-                                dropdown.find('.filter-options').html(optionsHtml);
-                                th.append(dropdown);
-
-                                dropdown.on('click', function(e) { e.stopPropagation(); });
-                                
-                                icon.on('click', function(e) {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    $('.dt-filter-dropdown').not(dropdown).addClass('hidden');
-                                    dropdown.toggleClass('hidden');
-                                });
-
-                                dropdown.find('.apply-filter').on('click', function(e) {
-                                    e.stopPropagation();
-                                    let checked = [];
-                                    dropdown.find('input[type="checkbox"]:checked').each(function() {
-                                        checked.push($.fn.dataTable.util.escapeRegex($(this).val()));
-                                    });
-                                    let regex = checked.length ? '^(' + checked.join('|') + ')$' : '';
-                                    column.search(regex, true, false).draw();
-                                    
-                                    if (checked.length) {
-                                        icon.removeClass('text-gray-300 hover:text-gray-500').addClass('text-blue-600');
-                                    } else {
-                                        icon.addClass('text-gray-300 hover:text-gray-500').removeClass('text-blue-600');
-                                    }
-                                    dropdown.addClass('hidden');
-                                });
-
-                                dropdown.find('.clear-filter').on('click', function(e) {
-                                    e.stopPropagation();
-                                    dropdown.find('input[type="checkbox"]').prop('checked', false);
-                                    column.search('', true, false).draw();
-                                    icon.addClass('text-gray-300 hover:text-gray-500').removeClass('text-blue-600');
-                                    dropdown.addClass('hidden');
-                                });
-                            } else if (title === 'Date') {
-                                th.addClass('relative');
-                                let dateIcon = $('<i class="fas fa-calendar-alt ml-2 text-gray-300 hover:text-gray-500 cursor-pointer transition-colors filter-icon" title="Filter Date Range"></i>');
-                                th.append(dateIcon);
-                                
-                                let dateInput = $('<input type="text" class="absolute opacity-0 w-1 h-1 top-full right-0" style="pointer-events:none;" />');
-                                th.append(dateInput);
-                                
-                                let fpFilter = flatpickr(dateInput[0], {
-                                    mode: "range",
-                                    dateFormat: "d/m/y",
-                                    onClose: function(selectedDates) {
-                                        if (selectedDates.length > 0) {
-                                            window.dtDateRange = selectedDates;
-                                            dateIcon.removeClass('text-gray-300 hover:text-gray-500').addClass('text-blue-600');
-                                        } else {
-                                            window.dtDateRange = null;
-                                            dateIcon.addClass('text-gray-300 hover:text-gray-500').removeClass('text-blue-600');
+                                    let uniqueVals = [];
+                                    column.data().each(function (d) {
+                                        let val = $('<div>').html(d || '').text().trim();
+                                        if (val && !uniqueVals.includes(val)) {
+                                            uniqueVals.push(val);
                                         }
-                                        dataTableInstance.draw();
-                                    }
-                                });
+                                    });
+                                    uniqueVals.sort();
 
-                                dateIcon.on('click', function(e) {
-                                    e.stopPropagation();
-                                    fpFilter.open();
-                                });
-                            }
-                        });
-                        
-                        $(document).off('click.dtFilter').on('click.dtFilter', function() {
-                            $('.dt-filter-dropdown').addClass('hidden');
-                        });
-                    }
-                });
+                                    let optionsHtml = '';
+                                    uniqueVals.forEach(function (val) {
+                                        optionsHtml += `
+                                            <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                                                <input type="checkbox" value="${val}" class="form-checkbox h-3.5 w-3.5 text-blue-600 rounded border-gray-300">
+                                                <span class="truncate">${val}</span>
+                                            </label>
+                                        `;
+                                    });
+                                    
+                                    dropdown.find('.filter-options').html(optionsHtml);
+                                    th.append(dropdown);
+
+                                    dropdown.on('click', function(e) { e.stopPropagation(); });
+                                    
+                                    icon.on('click', function(e) {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        $('.dt-filter-dropdown').not(dropdown).addClass('hidden');
+                                        dropdown.toggleClass('hidden');
+                                    });
+
+                                    dropdown.find('.apply-filter').on('click', function(e) {
+                                        e.stopPropagation();
+                                        let checked = [];
+                                        dropdown.find('input[type="checkbox"]:checked').each(function() {
+                                            checked.push($.fn.dataTable.util.escapeRegex($(this).val()));
+                                        });
+                                        let regex = checked.length ? '^(' + checked.join('|') + ')$' : '';
+                                        column.search(regex, true, false).draw();
+                                        
+                                        if (checked.length) {
+                                            icon.removeClass('text-gray-300 hover:text-gray-500').addClass('text-blue-600');
+                                        } else {
+                                            icon.addClass('text-gray-300 hover:text-gray-500').removeClass('text-blue-600');
+                                        }
+                                        dropdown.addClass('hidden');
+                                    });
+
+                                    dropdown.find('.clear-filter').on('click', function(e) {
+                                        e.stopPropagation();
+                                        dropdown.find('input[type="checkbox"]').prop('checked', false);
+                                        column.search('', true, false).draw();
+                                        icon.addClass('text-gray-300 hover:text-gray-500').removeClass('text-blue-600');
+                                        dropdown.addClass('hidden');
+                                    });
+                                } else if (title === 'Date') {
+                                    th.addClass('relative');
+                                    let dateIcon = $('<i class="fas fa-calendar-alt ml-2 text-gray-300 hover:text-gray-500 cursor-pointer transition-colors filter-icon" title="Filter Date Range"></i>');
+                                    th.append(dateIcon);
+                                    
+                                    let dateInput = $('<input type="text" class="absolute opacity-0 w-1 h-1 top-full right-0" style="pointer-events:none;" />');
+                                    th.append(dateInput);
+                                    
+                                    let fpFilter = flatpickr(dateInput[0], {
+                                        mode: "range",
+                                        dateFormat: "d/m/y",
+                                        onClose: function(selectedDates) {
+                                            if (selectedDates.length > 0) {
+                                                window.dtDateRange = selectedDates;
+                                                dateIcon.removeClass('text-gray-300 hover:text-gray-500').addClass('text-blue-600');
+                                            } else {
+                                                window.dtDateRange = null;
+                                                dateIcon.addClass('text-gray-300 hover:text-gray-500').removeClass('text-blue-600');
+                                            }
+                                            dataTableInstance.draw();
+                                        }
+                                    });
+
+                                    dateIcon.on('click', function(e) {
+                                        e.stopPropagation();
+                                        fpFilter.open();
+                                    });
+                                }
+                            });
+                            
+                            $(document).off('click.dtFilter').on('click.dtFilter', function() {
+                                $('.dt-filter-dropdown').addClass('hidden');
+                            });
+                        }
+                    });
+                }
 
                 Swal.close();
+                
+                // Restore the original scroll position seamlessly
+                setTimeout(() => {
+                    window.scrollTo(0, currentScroll);
+                }, 50);
+
             } catch(e) {
                 console.error("Load Reports Error:", e);
                 Swal.fire('Error', e.message || 'Failed to load reports. Check console.', 'error');
@@ -2491,7 +2546,11 @@
                     pageLength: 10,
                     stateSave: true,
                     dom: '<"flex justify-between items-center mb-4 p-4"lf>rt<"flex justify-between items-center mt-4 p-4"ip>',
-                    language: { search: "", searchPlaceholder: "Search users..." },
+                    language: {
+                        search: "",
+                        searchPlaceholder: "Search users...",
+                        lengthMenu: "Show _MENU_"
+                    },
                     order: [[0, 'asc']] 
                 });
 
@@ -2632,7 +2691,11 @@
                     pageLength: 10,
                     stateSave: true,
                     dom: '<"flex justify-between items-center mb-4 p-4"lf>rt<"flex justify-between items-center mt-4 p-4"ip>',
-                    language: { search: "", searchPlaceholder: "Search logs..." },
+                    language: {
+                        search: "",
+                        searchPlaceholder: "Search logs...",
+                        lengthMenu: "Show _MENU_"
+                    },
                     order: [] 
                 });
 
