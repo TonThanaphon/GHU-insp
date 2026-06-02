@@ -863,10 +863,12 @@
         };
 
         function handleLogout(isIdle = false) {
+            // 1. Explicitly clear local session and timers
             appState.currentUser = null;
             localStorage.removeItem('ghl_user');
             clearTimeout(idleTimer);
             
+            // 2. Hide navigation and main content wrappers to prevent background bleed
             const navBar = document.querySelector('nav');
             if (navBar) navBar.classList.add('hidden');
             
@@ -878,13 +880,16 @@
                 if (el) el.classList.add('hidden');
             });
             
+            // 3. Reveal a clean login screen
             const loginOverlay = document.getElementById('login-overlay');
             if (loginOverlay) loginOverlay.classList.remove('hidden');
             
             const loginForm = document.getElementById('login-form');
             if (loginForm) loginForm.reset();
 
+            // 4. Reload page to absolutely guarantee clean DOM and memory state
             if (isIdle) {
+                // Wait for the user to acknowledge the idle warning before reloading
                 Swal.fire({
                     title: 'Session Expired', 
                     text: 'You have been logged out due to inactivity.', 
@@ -1871,14 +1876,20 @@
                         { 
                             data: 'timestamp',
                             defaultContent: '-',
-                            render: function(data) {
+                            render: function(data, type, row) {
+                                if (type === 'sort') {
+                                    return getSortableTime(data || row.date);
+                                }
                                 return data || '-';
                             }
                         },
                         { 
                             data: 'date',
                             defaultContent: '-',
-                            render: function(data) {
+                            render: function(data, type, row) {
+                                if (type === 'sort') {
+                                    return getSortableTime(data || row.timestamp);
+                                }
                                 return data || '-';
                             }
                         },
