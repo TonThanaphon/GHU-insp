@@ -440,7 +440,6 @@
                     <button class="bg-blue-100 text-blue-700 font-semibold px-4 py-2 rounded-md" id="tab-btn-map" onclick="switchAdminTab('map')">Map & Images</button>
                     <button class="bg-gray-100 text-gray-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-200" id="tab-btn-gu" onclick="switchAdminTab('gu')">Setting GU STD</button>
                     <button class="bg-gray-100 text-gray-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-200" id="tab-btn-users" onclick="switchAdminTab('users')">User Management</button>
-                    <!-- NEW LOGS BUTTON -->
                     <button class="bg-gray-100 text-gray-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-200" id="tab-btn-logs" onclick="switchAdminTab('logs')">Login Logs</button>
                 </div>
 
@@ -552,7 +551,6 @@
                     </div>
                 </div>
 
-                <!-- NEW LOGIN LOGS SECTION -->
                 <div id="admin-tab-logs" class="hidden">
                     <div class="bg-gray-50 border rounded-lg p-5 mb-8">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b pb-4">
@@ -631,8 +629,9 @@
                 }
             },
             reports: [
-                { timestamp: "2026-05-20T08:30:00Z", part: "Front Cover", date: "20/05/26", color: "Gloss Black", sprayer: "Auto-Robot A", location: "Line 1", judgement: "OK", jobType: "New", remarks: "", recordedBy: "Mock Admin", guValues: {"FC1": 95, "FC2": 96, "FC3": 94, "FC4": 95, "FC5": 97, "FC6": 95} },
-                { timestamp: "2026-05-22T14:45:00Z", part: "Middle Seat", date: "22/05/26", color: "Pearl White", sprayer: "Auto-Robot B", location: "Line 2", judgement: "NG", jobType: "Repaint", remarks: "Dust", recordedBy: "Mock Admin", guValues: {"MS1": 92, "MS2": 91, "MS3": 93} }
+                { timestamp: "26/05/26 08:30", part: "Front Cover", date: "26/05/26", color: "Gloss Black", sprayer: "Auto-Robot A", location: "Line 1", judgement: "OK", jobType: "New", remarks: "", recordedBy: "Mock Admin", guValues: {"FC1": 95, "FC2": 96, "FC3": 94, "FC4": 95, "FC5": 97, "FC6": 95} },
+                { timestamp: "26/05/26 14:45", part: "Middle Seat", date: "26/05/26", color: "Pearl White", sprayer: "Auto-Robot B", location: "Line 2", judgement: "NG", jobType: "Repaint", remarks: "Dust", recordedBy: "Mock Admin", guValues: {"MS1": 92, "MS2": 91, "MS3": 93} },
+                { timestamp: "01/06/26 16:24", part: "Rear Cover", date: "01/06/26", color: "Matte Black", sprayer: "Auto-Robot A", location: "Line 1", judgement: "OK", jobType: "New", remarks: "", recordedBy: "Mock Admin", guValues: {"RC1": 85, "RC2": 88} }
             ]
         };
 
@@ -656,7 +655,6 @@
                             else if (method === 'addUser') payload.data = args[0];
                             else if (method === 'updateUser') payload.data = args[0];
                             else if (method === 'deleteUser') payload.data = args[0];
-                            // NEW API ROUTING
                             else if (method === 'getLoginLogs') payload.data = null;
                             
                             const response = await fetch(GAS_WEB_APP_URL, {
@@ -685,7 +683,6 @@
                             .withFailureHandler(reject)
                             [method](...args);
                     } else {
-                        // Mock Fallback
                         setTimeout(() => {
                             if (method === 'authenticateUser') {
                                 const user = MOCK_DB.users.find(u => String(u.empId) === String(args[0].empId) && String(u.password) === String(args[0].password));
@@ -729,11 +726,10 @@
                                 MOCK_DB.users = MOCK_DB.users.filter(u => String(u.empId) !== String(args[0]));
                                 resolve({success: true});
                             }
-                            // NEW API MOCK LOGIC
                             else if (method === 'getLoginLogs') {
                                 resolve([
-                                    { timestamp: new Date().toISOString(), empId: "111", fullName: "Somchai (OP)", role: "Operator" },
-                                    { timestamp: new Date(Date.now() - 3600000).toISOString(), empId: "333", fullName: "Admin System", role: "Admin" }
+                                    { timestamp: "26/05/26 12:00:00", empId: "111", fullName: "Somchai (OP)", role: "Operator" },
+                                    { timestamp: "26/05/26 11:30:00", empId: "333", fullName: "Admin System", role: "Admin" }
                                 ]);
                             }
                         }, 500); 
@@ -767,7 +763,7 @@
 
         let usersTableInstance = null;
         let dataTableInstance = null; 
-        let logsTableInstance = null; // NEW TABLE INSTANCE
+        let logsTableInstance = null;
         let idleTimer;
         const IDLE_TIMEOUT = 30 * 60 * 1000; 
         
@@ -867,12 +863,10 @@
         };
 
         function handleLogout(isIdle = false) {
-            // 1. Explicitly clear local session and timers
             appState.currentUser = null;
             localStorage.removeItem('ghl_user');
             clearTimeout(idleTimer);
             
-            // 2. Hide navigation and main content wrappers to prevent background bleed
             const navBar = document.querySelector('nav');
             if (navBar) navBar.classList.add('hidden');
             
@@ -884,16 +878,13 @@
                 if (el) el.classList.add('hidden');
             });
             
-            // 3. Reveal a clean login screen
             const loginOverlay = document.getElementById('login-overlay');
             if (loginOverlay) loginOverlay.classList.remove('hidden');
             
             const loginForm = document.getElementById('login-form');
             if (loginForm) loginForm.reset();
 
-            // 4. Reload page to absolutely guarantee clean DOM and memory state
             if (isIdle) {
-                // Wait for the user to acknowledge the idle warning before reloading
                 Swal.fire({
                     title: 'Session Expired', 
                     text: 'You have been logged out due to inactivity.', 
@@ -965,7 +956,6 @@
                 populateDropdowns();
                 loadDraft();
                 
-                // Initialize Job Type Default
                 setJobType(appState.entryForm.jobType || 'New');
                 
                 Swal.close();
@@ -1826,7 +1816,37 @@
         async function loadReports() {
             Swal.fire({ title: 'Loading Reports...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
-                const rawData = await API.run('getReportData');
+                let rawData = await API.run('getReportData');
+                
+                function getSortableTime(dateStr) {
+                    if (!dateStr || dateStr === '-') return 0;
+                    try {
+                        let parts = String(dateStr).trim().split(' ');
+                        let datePart = parts[0].split('/');
+                        if (datePart.length !== 3) return 0;
+
+                        let d = datePart[0].padStart(2, '0');
+                        let m = datePart[1].padStart(2, '0');
+                        let y = datePart[2];
+                        if (y.length === 2) y = '20' + y; 
+
+                        let timePart = parts[1] ? parts[1].split(':') : ['00','00','00'];
+                        let h = (timePart[0] || '00').padStart(2, '0');
+                        let min = (timePart[1] || '00').padStart(2, '0');
+                        let s = (timePart[2] || '00').padStart(2, '0');
+
+                        return Number(`${y}${m}${d}${h}${min}${s}`);
+                    } catch (e) {
+                        return 0;
+                    }
+                }
+
+                rawData.sort((a, b) => {
+                    const timeA = getSortableTime(a.timestamp || a.date);
+                    const timeB = getSortableTime(b.timestamp || b.date);
+                    return timeB - timeA;
+                });
+
                 appState.currentReports = rawData;
 
                 if (dataTableInstance) {
@@ -1844,29 +1864,22 @@
                 dataTableInstance = $('#reportsTable').DataTable({
                     data: dataForTable,
                     pageLength: 10,
-                    order: [[0, 'desc']], 
+                    stateSave: true,
+                    order: [], 
                     dom: '<"flex justify-between items-center mb-4"lf>rt<"flex justify-between items-center mt-4"ip>',
                     columns: [
                         { 
                             data: 'timestamp',
                             defaultContent: '-',
                             render: function(data) {
-                                if (!data || data === '-') return '-';
-                                let d = new Date(data);
-                                if (isNaN(d)) return data;
-                                return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear().toString().slice(-2) + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+                                return data || '-';
                             }
                         },
                         { 
                             data: 'date',
                             defaultContent: '-',
                             render: function(data) {
-                                if (!data || data === '-') return '-';
-                                if (typeof data === 'string' && (data.includes('-') || data.includes('T'))) {
-                                    let d = new Date(data);
-                                    if (!isNaN(d)) return flatpickr.formatDate(d, "d/m/y");
-                                }
-                                return data;
+                                return data || '-';
                             }
                         },
                         { data: 'part', defaultContent: '-' },
@@ -2176,7 +2189,7 @@
             const rowObj = appState.currentReports[index];
             if(!rowObj) return;
 
-            document.getElementById('viewMapTitle').innerText = `${rowObj.part} - ${new Date(rowObj.date).toLocaleDateString()} (${rowObj.judgement})`;
+            document.getElementById('viewMapTitle').innerText = `${rowObj.part} - ${rowObj.date} (${rowObj.judgement})`;
             document.getElementById('view-img').src = getPartImage(rowObj.part);
             
             const layer = document.getElementById('view-dots-layer');
@@ -2213,7 +2226,6 @@
         // ADMIN MODULE
         // ==========================================
         window.switchAdminTab = function(tab) {
-            // Updated to include 'logs'
             ['map', 'gu', 'data', 'users', 'logs'].forEach(t => {
                 const el = document.getElementById(`admin-tab-${t}`);
                 if(el) el.classList.add('hidden');
@@ -2227,7 +2239,7 @@
             if(activeBtn) activeBtn.className = "bg-blue-100 text-blue-700 font-semibold px-4 py-2 rounded-md transition";
 
             if (tab === 'users') loadUsers();
-            if (tab === 'logs') loadLoginLogs(); // Automatically fetch logs
+            if (tab === 'logs') loadLoginLogs();
         }
         
         window.handleImageUpload = async function() {
@@ -2466,6 +2478,7 @@
 
                 usersTableInstance = $('#users-table').DataTable({
                     pageLength: 10,
+                    stateSave: true,
                     dom: '<"flex justify-between items-center mb-4 p-4"lf>rt<"flex justify-between items-center mt-4 p-4"ip>',
                     language: { search: "", searchPlaceholder: "Search users..." },
                     order: [[0, 'asc']] 
@@ -2544,6 +2557,33 @@
             });
         }
 
+        window.deleteUserHandler = function(empId) {
+            if (appState.currentUser.empId === String(empId)) {
+                return Swal.fire('Forbidden', 'You cannot delete your own active Admin account.', 'error');
+            }
+
+            Swal.fire({
+                title: 'Delete User?',
+                html: `Are you entirely sure you want to delete user ID <b>${empId}</b>?<br>This action removes their access completely.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#9ca3af',
+                confirmButtonText: '<i class="fa-solid fa-trash mr-1"></i> Yes, Delete'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'Deleting...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    try {
+                        await API.run('deleteUser', empId);
+                        Swal.fire('Deleted!', 'User has been removed from the system.', 'success');
+                        loadUsers();
+                    } catch(e) {
+                        Swal.fire('Error', e.message || 'Failed to delete user.', 'error');
+                    }
+                }
+            });
+        }
+
         window.loadLoginLogs = async function() {
             Swal.fire({ title: 'Loading Logs...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
@@ -2561,14 +2601,7 @@
                     let tr = document.createElement('tr');
                     tr.className = 'border-b hover:bg-gray-50';
                     
-                    let tsStr = '-';
-                    if (log.timestamp) {
-                        let d = new Date(log.timestamp);
-                        if (!isNaN(d)) {
-                            // Formatting Timestamp cleanly (DD/MM/YY HH:MM:SS)
-                            tsStr = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear().toString().slice(-2) + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2);
-                        }
-                    }
+                    let tsStr = log.timestamp || '-';
 
                     let roleBadge = '';
                     if(log.role === 'Admin') roleBadge = `<span class="bg-red-100 text-red-700 px-2.5 py-1 rounded text-xs font-bold border border-red-200 shadow-sm">${log.role}</span>`;
@@ -2586,9 +2619,10 @@
 
                 logsTableInstance = $('#logs-table').DataTable({
                     pageLength: 10,
+                    stateSave: true,
                     dom: '<"flex justify-between items-center mb-4 p-4"lf>rt<"flex justify-between items-center mt-4 p-4"ip>',
                     language: { search: "", searchPlaceholder: "Search logs..." },
-                    order: [] // Maintain backend's reverse chronological sorting
+                    order: [] 
                 });
 
                 Swal.close();
