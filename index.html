@@ -202,9 +202,12 @@
                                 <button type="button" id="btn-tok" onclick="setJudgement('TOK')" class="btn-judge-tok no-tap-highlight w-1/3 text-sm font-bold border-t border-b border-r border-gray-300 rounded-r-md bg-gray-100 text-gray-500 transition-colors">TOK</button>
                             </div>
                         </div>
+                        <!-- CHANGED Remarks from Input to Dropdown Select -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Remarks (Defect Reason if NG)</label>
-                            <input type="text" id="entry-remarks" placeholder="e.g., HG, LG, Dust..." class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-gray-50" oninput="saveDraft()">
+                            <select id="entry-remarks" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 bg-gray-50 font-medium" onchange="saveDraft()">
+                                <option value="">- Select Defect (Optional) -</option>
+                            </select>
                         </div>
                     </div>
 
@@ -441,6 +444,8 @@
                     <button class="bg-gray-100 text-gray-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-200" id="tab-btn-gu" onclick="switchAdminTab('gu')">Setting GU STD</button>
                     <button class="bg-gray-100 text-gray-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-200" id="tab-btn-users" onclick="switchAdminTab('users')">User Management</button>
                     <button class="bg-gray-100 text-gray-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-200" id="tab-btn-logs" onclick="switchAdminTab('logs')">Login Logs</button>
+                    <!-- NEW ADMIN SUB-TAB BUTTON -->
+                    <button class="bg-gray-100 text-gray-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-200" id="tab-btn-defects" onclick="switchAdminTab('defects')">Defect Management</button>
                 </div>
 
                 <div id="admin-tab-map" class="block">
@@ -577,6 +582,34 @@
                     </div>
                 </div>
 
+                <!-- NEW ADMIN DEFECT MANAGEMENT PANEL CONTAINER -->
+                <div id="admin-tab-defects" class="hidden">
+                    <div class="bg-gray-50 border rounded-lg p-5 mb-8">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b pb-4">
+                            <h3 class="text-md font-semibold text-gray-700"><i class="fa-solid fa-triangle-exclamation text-red-500 mr-2"></i>Defect Reason Management</h3>
+                        </div>
+                        
+                        <!-- Add Defect Input Group -->
+                        <div class="flex flex-col md:flex-row md:items-end space-y-3 md:space-y-0 md:space-x-4 mb-6 border-b pb-6">
+                            <div class="flex-1">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">New Defect Reason Name</label>
+                                <input type="text" id="admin-new-defect" class="w-full border border-gray-300 rounded-md p-2 bg-white focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., Scratch, Bubble, HG, LG">
+                            </div>
+                            <button onclick="addDefectMaster()" class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition font-medium shadow-sm flex items-center justify-center">
+                                <i class="fa-solid fa-plus mr-1"></i> Add Defect Option
+                            </button>
+                        </div>
+                        
+                        <!-- List UI -->
+                        <div class="bg-white rounded-md shadow-sm border border-gray-200 p-4">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3 border-b pb-2">Current Active Defect Reasons</h4>
+                            <div id="admin-defects-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </section>
 
@@ -610,6 +643,7 @@
                 sprayers: ["Auto-Robot A", "Auto-Robot B", "Manual - John", "Manual - Sarah"],
                 colors: ["Gloss Black", "Matte Black", "Metallic Silver", "Pearl White"],
                 locations: ["Line 1", "Line 2", "Booth A"],
+                defects: ["HG", "LG", "Dust", "Scratch", "Bubble"], // Added default defect list
                 imageUrls: {},
                 guStandards: {
                     "Front Cover": [
@@ -656,6 +690,9 @@
                             else if (method === 'updateUser') payload.data = args[0];
                             else if (method === 'deleteUser') payload.data = args[0];
                             else if (method === 'getLoginLogs') payload.data = null;
+                            // NEW: MasterData Management payloads mapped
+                            else if (method === 'addMasterData') payload.data = args[0];
+                            else if (method === 'deleteMasterData') payload.data = args[0];
                             
                             const response = await fetch(GAS_WEB_APP_URL, {
                                 method: 'POST',
@@ -731,6 +768,30 @@
                                     { timestamp: "26/05/26 12:00:00", empId: "111", fullName: "Somchai (OP)", role: "Operator" },
                                     { timestamp: "26/05/26 11:30:00", empId: "333", fullName: "Admin System", role: "Admin" }
                                 ]);
+                            }
+                            // NEW: Local Mock Handlers for master defects management
+                            else if (method === 'addMasterData') {
+                                if (args[0].category === 'Defect') {
+                                    if (!MOCK_DB.masterData.defects) MOCK_DB.masterData.defects = [];
+                                    if (MOCK_DB.masterData.defects.includes(args[0].key)) {
+                                        reject(new Error("Defect already exists."));
+                                    } else {
+                                        MOCK_DB.masterData.defects.push(args[0].key);
+                                        resolve({success: true});
+                                    }
+                                } else {
+                                    resolve({success: true});
+                                }
+                            }
+                            else if (method === 'deleteMasterData') {
+                                if (args[0].category === 'Defect') {
+                                    if (MOCK_DB.masterData.defects) {
+                                        MOCK_DB.masterData.defects = MOCK_DB.masterData.defects.filter(d => d !== args[0].key);
+                                    }
+                                    resolve({success: true});
+                                } else {
+                                    resolve({success: true});
+                                }
                             }
                         }, 500); 
                     }
@@ -863,10 +924,12 @@
         };
 
         function handleLogout(isIdle = false) {
+            // 1. Explicitly clear local session and timers
             appState.currentUser = null;
             localStorage.removeItem('ghl_user');
             clearTimeout(idleTimer);
             
+            // 2. Hide navigation and main content wrappers to prevent background bleed
             const navBar = document.querySelector('nav');
             if (navBar) navBar.classList.add('hidden');
             
@@ -878,13 +941,16 @@
                 if (el) el.classList.add('hidden');
             });
             
+            // 3. Reveal a clean login screen
             const loginOverlay = document.getElementById('login-overlay');
             if (loginOverlay) loginOverlay.classList.remove('hidden');
             
             const loginForm = document.getElementById('login-form');
             if (loginForm) loginForm.reset();
 
+            // 4. Reload page to absolutely guarantee clean DOM and memory state
             if (isIdle) {
+                // Wait for the user to acknowledge the idle warning before reloading
                 Swal.fire({
                     title: 'Session Expired', 
                     text: 'You have been logged out due to inactivity.', 
@@ -1028,6 +1094,16 @@
             populate('entry-color', appState.masterData.colors);
             populate('entry-location', appState.masterData.locations);
             
+            // CHANGED: Remarks populate logic to use master defects dropdown
+            const populateDefects = (id, data) => {
+                const sel = document.getElementById(id);
+                if(sel) {
+                    sel.innerHTML = '<option value="">- Select Defect (Optional) -</option>';
+                    data.forEach(item => { sel.add(new Option(item, item)); });
+                }
+            };
+            populateDefects('entry-remarks', appState.masterData.defects || []);
+            
             const dashPartSel = document.getElementById('dash-filter-part');
             if(dashPartSel) {
                 dashPartSel.innerHTML = '<option value="ALL">All Parts</option>';
@@ -1138,6 +1214,86 @@
                 activeEl.classList.add('bg-blue-600', 'text-white');
             }
             saveDraft();
+        }
+
+        // ==========================================
+        // ADMIN DEFECT OPTIONS MANAGEMENT UI logic
+        // ==========================================
+        window.addDefectMaster = async function() {
+            const inputEl = document.getElementById('admin-new-defect');
+            const newDefect = inputEl ? inputEl.value.trim() : '';
+            if (!newDefect) {
+                return Swal.fire('Notice', 'Please enter a defect reason name.', 'warning');
+            }
+
+            Swal.fire({ title: 'Adding Defect...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const result = await API.run('addMasterData', { category: 'Defect', key: newDefect });
+                if (result.success) {
+                    Swal.fire('Success', 'Defect reason added successfully!', 'success');
+                    inputEl.value = '';
+                    
+                    // Refresh MasterData and Repopulate
+                    appState.masterData = await API.run('getMasterData');
+                    populateDropdowns();
+                    renderAdminDefectsList();
+                }
+            } catch (error) {
+                Swal.fire('Error', error.message || 'Failed to add defect.', 'error');
+            }
+        };
+
+        window.deleteDefectMaster = async function(defectName) {
+            const res = await Swal.fire({
+                title: 'Delete Defect Reason?',
+                html: `Are you sure you want to delete <b>${defectName}</b>?<br>Standard users will no longer see this option.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#9ca3af',
+                confirmButtonText: '<i class="fa-solid fa-trash mr-1"></i> Yes, Delete'
+            });
+
+            if (res.isConfirmed) {
+                Swal.fire({ title: 'Deleting...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                try {
+                    const result = await API.run('deleteMasterData', { category: 'Defect', key: defectName });
+                    if (result.success) {
+                        Swal.fire('Deleted!', 'Defect reason has been deleted.', 'success');
+                        
+                        // Refresh MasterData and Repopulate
+                        appState.masterData = await API.run('getMasterData');
+                        populateDropdowns();
+                        renderAdminDefectsList();
+                    }
+                } catch (error) {
+                    Swal.fire('Error', error.message || 'Failed to delete defect.', 'error');
+                }
+            }
+        };
+
+        function renderAdminDefectsList() {
+            const container = document.getElementById('admin-defects-list');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const defects = appState.masterData.defects || [];
+            if (defects.length === 0) {
+                container.innerHTML = '<p class="text-sm text-gray-400 italic col-span-full">No defect reasons found. Add some above.</p>';
+                return;
+            }
+            
+            defects.forEach(defect => {
+                const card = document.createElement('div');
+                card.className = 'flex items-center justify-between bg-gray-50 border border-gray-200 rounded p-2.5 shadow-sm hover:bg-gray-100 transition';
+                card.innerHTML = `
+                    <span class="font-semibold text-gray-700 truncate mr-2" title="${defect}">${defect}</span>
+                    <button onclick="deleteDefectMaster('${defect}')" class="text-red-500 hover:text-red-700 p-1.5 hover:bg-red-50 rounded transition" title="Delete Defect">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                `;
+                container.appendChild(card);
+            });
         }
 
         function setJudgement(val) {
@@ -1643,7 +1799,7 @@
                     labels: sorted.map(i => i[0]),
                     datasets: [{ label: 'Defect Count', data: sorted.map(i => i[1]), backgroundColor: '#8b5cf6', borderRadius: 4 }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { textSize: 1 } } } }
             });
         }
 
@@ -2116,6 +2272,16 @@
             const currentJobType = rowObj.jobType || 'New';
             const jobTypeOpts = ['New', 'Repaint'].map(j => `<option value="${j}" ${j === currentJobType ? 'selected' : ''}>${j}</option>`).join('');
 
+            // CHANGED: Remarks Edit element constructed dynamically as a Dropdown populated with defects
+            const currentRemarks = rowObj.remarks || '';
+            const defectOpts = (appState.masterData.defects || []).map(d => `<option value="${d}" ${d === currentRemarks ? 'selected' : ''}>${d}</option>`).join('');
+            const remarksDropdownHtml = `
+                <select id="edit-remarks" class="w-full border border-gray-300 focus:border-blue-500 rounded p-2 bg-white font-medium">
+                    <option value="">- Select Defect (Optional) -</option>
+                    ${defectOpts}
+                </select>
+            `;
+
             const coords = appState.masterData.coordinates[rowObj.part] || [];
             let guInputsHtml = '';
             
@@ -2193,9 +2359,10 @@
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Judgement</label>
                                 <select id="edit-judgement" class="w-full border border-gray-300 focus:border-blue-500 rounded p-2 bg-white">${judgeOpts}</select>
                             </div>
+                            <!-- CHANGED Remarks field from generic Text input to the dynamic dropdown select component -->
                             <div>
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Remarks</label>
-                                <input type="text" id="edit-remarks" class="w-full border border-gray-300 focus:border-blue-500 rounded p-2" value="${rowObj.remarks || ''}">
+                                ${remarksDropdownHtml}
                             </div>
                         </div>
                         ${guInputsHtml}
@@ -2292,7 +2459,8 @@
         // ADMIN MODULE
         // ==========================================
         window.switchAdminTab = function(tab) {
-            ['map', 'gu', 'data', 'users', 'logs'].forEach(t => {
+            // CHANGED: defects added dynamically to administrative tab switching arrays
+            ['map', 'gu', 'data', 'users', 'logs', 'defects'].forEach(t => {
                 const el = document.getElementById(`admin-tab-${t}`);
                 if(el) el.classList.add('hidden');
                 const btn = document.getElementById(`tab-btn-${t}`);
@@ -2306,6 +2474,7 @@
 
             if (tab === 'users') loadUsers();
             if (tab === 'logs') loadLoginLogs();
+            if (tab === 'defects') renderAdminDefectsList(); // <-- NEW: Renders active defects
         }
         
         window.handleImageUpload = async function() {
